@@ -1,6 +1,5 @@
 plugins {
      id 'helmo-common-conventions'
-     
      id 'java-library'
 }
 

@@ -1,7 +1,7 @@
 /*
  * This source file is an example
  */
-package org.helmo.example.presentations;
+package mma.admin.presentations;
 
 public class Presenter {
 	

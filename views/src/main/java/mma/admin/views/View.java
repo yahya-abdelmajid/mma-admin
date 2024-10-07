@@ -1,7 +1,7 @@
 /*
  * This source file is an example
  */
-package org.helmo.example.views;
+package mma.admin.views;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

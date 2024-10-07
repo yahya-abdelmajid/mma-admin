@@ -16,7 +16,7 @@ dependencies {
 
 application {
     // Define the main class for the application.
-    mainClass = 'org.helmo.example.app.Program'
+    mainClass = 'mma.admin.app.Program'
 }
 
 tasks.register('aggregatePmdReports', AggregatePmdReportsTask) {

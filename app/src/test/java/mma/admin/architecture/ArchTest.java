@@ -1,7 +1,7 @@
-package org.helmo.architecture;
+package mma.admin.architecture;
 
 import com.tngtech.archunit.core.importer.ClassFileImporter;
-import org.helmo.example.app.Program;
+import mma.admin.app.Program;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

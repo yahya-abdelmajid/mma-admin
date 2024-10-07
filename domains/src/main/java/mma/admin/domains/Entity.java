@@ -1,7 +1,7 @@
 /*
  * This source file is an example
  */
-package org.helmo.example.domains;
+package mma.admin.domains;
 
 public class Entity {
     
