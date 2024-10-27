@@ -4,12 +4,43 @@
 package mma.admin.app;
 
 
-import mma.admin.infrastructures.Repository;
+import mma.admin.domains.*;
+import mma.admin.domains.interfaces.ReservationsService;
+import mma.admin.domains.interfaces.RoomsService;
+import mma.admin.domains.interfaces.UsersService;
+import mma.admin.infrastructures.CsvRoomsReader;
+import mma.admin.infrastructures.CsvUsersReader;
+import mma.admin.infrastructures.ICSReservationsImpl;
+import mma.admin.presentations.Presenter;
 import mma.admin.views.View;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Stream;
+
 public class Program {
-    public static void main(String[] args) {
-        View.greets();
-        Repository.greetsFromInfra();
+    public static void main(String[] args) throws IOException, ParseException {
+        RoomsService roomsReader =new CsvRoomsReader("../domains/src/main/resources/dir/rooms.csv");
+        UsersService usersReader=new CsvUsersReader("../domains/src/main/resources/dir/users.csv");
+        ReservationsService reservationsImpl= new ICSReservationsImpl("../domains/src/main/resources/dir/reservations.ics",roomsReader);
+        usersReader.readAllUsers();
+        roomsReader.readAllRooms();
+
+        Presenter presenter= new Presenter(reservationsImpl, roomsReader,usersReader);
+        presenter.readAllReservations();
+        //presenter.addReservations("LB1","E567890","2024-10-28","09:30","12:30","Kickoff trapèze",3);
+
+        View view=new View(presenter);
+        view.displayGrid(LocalDate.now());
+        view.displayMenu();
+
+        //view.searchReservation("2024-10-28","LB1","09:30","12:30");
     }
 }

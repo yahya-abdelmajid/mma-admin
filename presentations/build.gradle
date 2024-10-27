@@ -8,4 +8,5 @@ dependencies {
      implementation project(':domains')
      
      testImplementation 'org.mockito:mockito-core'
+     implementation 'org.mnode.ical4j:ical4j:4.0.4'
 }
