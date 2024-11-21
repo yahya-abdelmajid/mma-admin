@@ -1,8 +1,6 @@
-import mma.admin.domains.Reservation;
-import mma.admin.domains.User;
 import mma.admin.domains.interfaces.ReservationsService;
-import mma.admin.domains.interfaces.RoomsService;
-import mma.admin.domains.interfaces.UsersService;
+import mma.admin.domains.interfaces.RoomsReader;
+import mma.admin.domains.interfaces.UsersReader;
 import mma.admin.presentations.Presenter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,14 +14,14 @@ import static org.mockito.Mockito.mock;
 public class PresenterTest {
 
         Presenter presenter;
-        RoomsService roomsReader;
-        UsersService usersReader;
+        RoomsReader roomsReader;
+        UsersReader usersReader;
         ReservationsService reservationsService;
 
         @BeforeEach
         void setUp() {
-            roomsReader = mock(RoomsService.class);
-            usersReader = mock(UsersService.class);
+            roomsReader = mock(RoomsReader.class);
+            usersReader = mock(UsersReader.class);
             reservationsService = mock(ReservationsService.class);
             presenter=new Presenter (reservationsService,roomsReader,usersReader);
         }

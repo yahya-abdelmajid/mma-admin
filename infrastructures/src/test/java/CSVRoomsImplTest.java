@@ -1,9 +1,8 @@
 import mma.admin.domains.Room;
-import mma.admin.infrastructures.CsvRoomsReader;
+import mma.admin.infrastructures.csv.CsvRoomsReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;

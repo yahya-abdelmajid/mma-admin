@@ -4,31 +4,63 @@
 package mma.admin.app;
 
 
-import mma.admin.domains.*;
+import mma.admin.domains.Reservation;
+import mma.admin.domains.RoomId;
+import mma.admin.domains.TimeSlot;
+import mma.admin.domains.User;
 import mma.admin.domains.interfaces.ReservationsService;
-import mma.admin.domains.interfaces.RoomsService;
-import mma.admin.domains.interfaces.UsersService;
-import mma.admin.infrastructures.CsvRoomsReader;
-import mma.admin.infrastructures.CsvUsersReader;
-import mma.admin.infrastructures.ICSReservationsImpl;
+import mma.admin.domains.interfaces.RoomsReader;
+import mma.admin.domains.interfaces.UsersReader;
+import mma.admin.infrastructures.csv.CsvRoomsReader;
+import mma.admin.infrastructures.csv.CsvUsersReader;
+import mma.admin.infrastructures.csv.ICSReservationsImpl;
+import mma.admin.infrastructures.dao.interfaces.ReaderDao;
+import mma.admin.infrastructures.service.ReservationService;
+import mma.admin.infrastructures.service.UserService;
+import mma.admin.infrastructures.sql.SQLDataStorage;
+import mma.admin.infrastructures.sql.SQLDataStorageFactory;
 import mma.admin.presentations.Presenter;
 import mma.admin.views.View;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalTime;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class Program {
     public static void main(String[] args) throws IOException, ParseException {
-        RoomsService roomsReader =new CsvRoomsReader("../domains/src/main/resources/dir/rooms.csv");
-        UsersService usersReader=new CsvUsersReader("../domains/src/main/resources/dir/users.csv");
+
+        SQLDataStorageFactory storageFactory=new SQLDataStorageFactory("jdbc:mysql://192.168.132.200:13306/Q240275","Q240275","0275");
+        SQLDataStorage sqlDataStorage=storageFactory.getSQLDataStorage();
+
+        UserService userService=new UserService(sqlDataStorage);
+
+        for(User user:userService.getAllUsers()) {
+            System.out.println(user.getBadge());
+        }
+
+        /*ReservationService reservationService=new ReservationService(sqlDataStorage);
+        String personId = "A123456";
+        LocalDateTime date = LocalDateTime.of(2024, 11, 20, 10, 0);
+        TimeSlot timeSlot = new TimeSlot(LocalDate.of(2024, 11, 21), LocalTime.of(15, 0), LocalTime.of(16, 30));
+        String description = "Meeting";
+
+        Reservation reservation = new Reservation("LC1", personId, date, timeSlot, description);
+        reservationService.addReservationService(reservation);
+
+        /*List<Reservation> reservations=reservationService.getAllReservations();
+
+        for(Reservation reservation1: reservations) {
+            System.out.println(reservation1.toString());
+        }*/
+
+
+
+
+        /*RoomsReader roomsReader =new CsvRoomsReader("../domains/src/main/resources/dir/rooms.csv");
+        UsersReader usersReader=new CsvUsersReader("../domains/src/main/resources/dir/users.csv");
         ReservationsService reservationsImpl= new ICSReservationsImpl("../domains/src/main/resources/dir/reservations.ics",roomsReader);
         usersReader.readAllUsers();
         roomsReader.readAllRooms();
@@ -42,5 +74,7 @@ public class Program {
         view.displayMenu();
 
         //view.searchReservation("2024-10-28","LB1","09:30","12:30");
+
+         */
     }
 }

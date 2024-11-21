@@ -1,21 +1,14 @@
-package mma.admin.infrastructures;
+package mma.admin.infrastructures.csv;
 
 import mma.admin.domains.User;
-import mma.admin.domains.interfaces.UsersService;
-import mma.admin.domains.interfaces.repository.UsersRepository;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Stream;
 
-public class CsvUsersReader implements UsersService {
+public class CsvUsersReader {
 
     private String csvFile;
     private Set<User> users;
@@ -27,22 +20,21 @@ public class CsvUsersReader implements UsersService {
         this.csvFile = csvFile;
     }
 
-    @Override
+
     public Set<User> getUsers() {
         return users;
     }
 
-    @Override
+
     public boolean exists(String matricule){
-       return users.stream().anyMatch(user -> user.getMatricule().equals(matricule));
+       return users.stream().anyMatch(user -> user.getBadge().equals(matricule));
     }
 
     public User getUser(String id){
-        return users.stream().filter(user -> user.getMatricule().equals(id)).findFirst().get();
+        return users.stream().filter(user -> user.getBadge().equals(id)).findFirst().get();
     }
 
     //généré par une IA
-    @Override
    public void readAllUsers(){
        String line;
        String csvSplitBy = ",";

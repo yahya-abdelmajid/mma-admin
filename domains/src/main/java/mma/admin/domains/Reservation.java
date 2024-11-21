@@ -3,6 +3,7 @@ package mma.admin.domains;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -14,6 +15,7 @@ public class Reservation implements Comparable<Reservation> {
     private LocalDateTime date;
     private TimeSlot timeSlot;
     private String description;
+    private List<Prestation> prestations;
 
     /**
      * Constructeur pour initialiser une réservation avec tous ses détails.
@@ -24,8 +26,8 @@ public class Reservation implements Comparable<Reservation> {
      * @param timeSlot La date et l'heure de début et de fin
      * @param description La description de la réservation.
      */
-    public Reservation(RoomId roomId, String personId, LocalDateTime dateTime, TimeSlot timeSlot, String description) {
-        this.roomId = roomId;
+    public Reservation(String roomId, String personId, LocalDateTime dateTime, TimeSlot timeSlot, String description) {
+        this.roomId = new RoomId(roomId);
         this.personId = personId;
         this.date = dateTime;
         this.description = description;
@@ -38,6 +40,9 @@ public class Reservation implements Comparable<Reservation> {
     public LocalDateTime getDate() { return date; }
     public String getDescription() { return description; }
     public TimeSlot getTimeSlot() { return timeSlot; }
+
+    public List<Prestation> getPrestations() {return prestations;}
+
     public void setRoomId(RoomId roomId) { this.roomId = roomId; }
     public void setPersonId(String personId) { this.personId = personId; }
     public void setDate(LocalDateTime date) { this.date = date; }

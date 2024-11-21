@@ -1,9 +1,7 @@
-package mma.admin.infrastructures;
+package mma.admin.infrastructures.csv;
 
 import mma.admin.domains.*;
-import mma.admin.domains.interfaces.ReservationsService;
-import mma.admin.domains.interfaces.RoomsService;
-import mma.admin.domains.interfaces.repository.ReservationRepository;
+import mma.admin.domains.interfaces.RoomsReader;
 import net.fortuna.ical4j.data.CalendarBuilder;
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.model.*;
@@ -20,24 +18,22 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.Temporal;
 import java.util.*;
 
-import static net.fortuna.ical4j.model.Property.DTSTART;
 import static net.fortuna.ical4j.model.property.immutable.ImmutableCalScale.GREGORIAN;
 import static net.fortuna.ical4j.model.property.immutable.ImmutableVersion.VERSION_2_0;
 
 /**
  * Gestionnaire de fichiers pour la création et l'écriture dans les fichiers .ics.
  */
-public class ICSReservationsImpl implements ReservationsService, ReservationRepository {
+public class ICSReservationsImpl{
     private final String icsFilePath;
     Calendar calendar;
     List<Reservation> reservations;
-    RoomsService roomsService;
+    RoomsReader roomsReader;
     VEvent event;
 
-    public ICSReservationsImpl(String icsFilePath, RoomsService roomsService) {
+    public ICSReservationsImpl(String icsFilePath, RoomsReader roomsReader) {
         this.icsFilePath=icsFilePath;
         this.calendar = new Calendar();
         calendar.add(new ProdId("-//Ben Fortuna//iCal4j 1.0//EN"));
@@ -45,7 +41,7 @@ public class ICSReservationsImpl implements ReservationsService, ReservationRepo
         calendar.add(GREGORIAN);
         reservations = new ArrayList<>();
         //readAllReservations();
-        this.roomsService=roomsService;
+        this.roomsReader = roomsReader;
     }
 
     public List<Reservation> getReservations() {
@@ -54,7 +50,6 @@ public class ICSReservationsImpl implements ReservationsService, ReservationRepo
 
 
 
-    @Override
     public void readAllReservations() {
 
         try {
@@ -96,14 +91,13 @@ public class ICSReservationsImpl implements ReservationsService, ReservationRepo
 
                 //La Salle avec l'id
                 Location location = event.getLocation().get();
-                RoomId roomId = new RoomId(location.getValue());
+                String roomId = location.getValue();
 
                 // Créer le TimeSlot
                 TimeSlot timeSlot = new TimeSlot(startDate, endDate);
 
                 // Créer la réservation et l'ajouter à la liste
                 Reservation reservation = new Reservation(roomId, personId, reservationDate, timeSlot, description.getValue());
-                roomsService.addReservation(reservation);
             }
 
         } catch (Exception e) {
@@ -170,7 +164,7 @@ public class ICSReservationsImpl implements ReservationsService, ReservationRepo
     public void createEventForReservation(User user, Reservation reservation) {
         String eventName = reservation.getDescription();
         TimeSlot ts=reservation.getTimeSlot();
-        Uid uid = new Uid(UUID.randomUUID().toString()+"-"+user.getMatricule());
+        Uid uid = new Uid(UUID.randomUUID().toString()+"-"+user.getBadge());
         Description description=new Description(reservation.getDescription());
         Location loc=new Location(reservation.getRoomId().toString());
         this.event = new VEvent(ts.getStartTime(), ts.getEndTime(), eventName);

@@ -5,6 +5,9 @@ package mma.admin.presentations;
 
 import mma.admin.domains.*;
 import mma.admin.domains.interfaces.*;
+import mma.admin.domains.interfaces.repository.CalendarsRepository;
+import mma.admin.domains.interfaces.repository.RoomsRepository;
+import mma.admin.domains.interfaces.repository.UsersRepository;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -14,21 +17,20 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
-import java.util.stream.Stream;
 
 public class Presenter {
-    ReservationsService reservationsService;
-    RoomsService roomsService;
-    UsersService usersService;
+    CalendarsRepository calendarsRep;
+    UsersRepository usersRep;
+    RoomsRepository roomsRep;
     private final LocalTime startTime = LocalTime.of(8, 0);   // Heure de début (08:00)
     private final LocalTime endTime = LocalTime.of(17, 0);
     private final LocalTime[] workingTimes;
 
 
-    public Presenter(ReservationsService reservationsService, RoomsService roomsService, UsersService usersService) {
-        this.reservationsService = reservationsService;
-        this.roomsService = roomsService;
-        this.usersService = usersService;
+    public Presenter(CalendarsRepository calendarsRep, UsersRepository usersRep, RoomsRepository roomsRep) {
+        this.calendarsRep = calendarsRep;
+        this.usersRep = usersRep;
+        this.roomsRep = roomsRep;
         this.workingTimes = createHeader();
     }
 
@@ -42,31 +44,26 @@ public class Presenter {
     public void addReservations(String roomId, String matricule,String day,String start,
                                 String end,String description,int expected) throws IOException, ParseException {
         System.out.println("Adding reservations");
-        RoomId id=new RoomId(roomId);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         LocalDateTime s = LocalDateTime.parse(day+" "+start, formatter);
         LocalDateTime e = LocalDateTime.parse(day+" "+end, formatter);
         LocalDateTime d = LocalDateTime.parse(LocalDateTime.now().format(formatter), formatter);
         TimeSlot timeSlot=new TimeSlot(s,e);
-        Reservation reservation=new Reservation(id,matricule,LocalDateTime.now(),timeSlot,description);
+        Reservation reservation=new Reservation(roomId,matricule,LocalDateTime.now(),timeSlot,description);
 
-        User user=usersService.getUser(matricule);
+        User user= usersRep.getUser(matricule);
         //Vérifie que le matricule et que la room existe
-        if(usersService.exists(matricule)&& roomsService.exists(roomId)
+        if(usersRep.exists(matricule)&& roomsRep.exists(roomId)
                 //Vérifie que la capacité de la room est suffisante
-                &&roomsService.capacityRoomIsNotExceeded(roomId,expected)){
+                && roomsRep.capacityRoomIsNotExceeded(roomId,expected)){
             //Vérifie que la réservation n'existe pas et le créneau horaire se trouve dans les heures d'ouverture
-            if(!reservationsService.exists(reservation)&&timeSlot.isWithinWorkingHours(startTime,endTime)&&
+            if(!calendarsRep.exists(reservation)&&timeSlot.isWithinWorkingHours(startTime,endTime)&&
                     //Vérifie que le créneau horaire ne commence pas dans le passé
                 timeSlot.isNotInPast()){
                 System.out.println("la reservation n'existe pas donc c'est bon pour ajouter");
-                reservationsService.registerInCalendar(user,reservation);
+                //reservationsService.registerInCalendar(user,reservation);
             }
         }
-    }
-
-    public void readAllReservations() throws IOException, ParseException {
-        reservationsService.readAllReservations();
     }
 
     public void displayHeader(DateTimeFormatter formatter) {
@@ -104,9 +101,9 @@ public class Presenter {
         // Génération des créneaux horaires (08h00 - 16h30) généré par une IA
         LocalTime[] timeTab=createHeader();
         char signe = '❌';
-        Set<Room> rooms=roomsService.getRooms();
-        for(Room room: rooms){
-            System.out.println(room.getLigneMenu(timeTab,date,signe+""));
+        Collection<Agenda> agendas= calendarsRep.getAgendas();
+        for(Agenda agenda: agendas){
+            System.out.println(agenda.getLigneMenu(timeTab,date,signe+""));
         }
     }
 
@@ -164,19 +161,18 @@ public class Presenter {
 
     public void displayReservationIfExist(String day,String roomId,String start,String end) {
 
-        RoomId id=new RoomId(roomId);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         LocalDateTime s = LocalDateTime.parse(day+" "+start, formatter);
         LocalDateTime e = LocalDateTime.parse(day+" "+end, formatter);
         TimeSlot timeSlot=new TimeSlot(s,e);
-        Reservation reservation=new Reservation(id,"",null,timeSlot,"");
+        Reservation reservation=new Reservation(roomId,"",null,timeSlot,"");
         Reservation result;
-        if(!roomsService.exists(roomId)) System.out.println("La salle n'existe pas");
+        if(!roomsRep.exists(roomId)) System.out.println("La salle n'existe pas");
 
         if(!timeSlot.isWithinWorkingHours(startTime,endTime))
             System.out.println("Le créneau horaire est en dehors des heures d'ouverture!");
 
-        result=roomsService.getReservation(reservation);
+        result= calendarsRep.getReservation(reservation);
 
         if(result==null) {
             System.out.println("Aucune correspondance trouvé");

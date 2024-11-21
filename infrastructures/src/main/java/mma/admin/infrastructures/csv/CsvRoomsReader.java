@@ -1,18 +1,17 @@
-package mma.admin.infrastructures;
+package mma.admin.infrastructures.csv;
 
 import mma.admin.domains.Reservation;
 import mma.admin.domains.Room;
 import mma.admin.domains.RoomId;
-import mma.admin.domains.interfaces.RoomsService;
+import mma.admin.domains.interfaces.RoomsReader;
 import mma.admin.domains.interfaces.repository.RoomsRepository;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Stream;
 
-public class CsvRoomsReader implements RoomsService, RoomsRepository {
+public class CsvRoomsReader {
 
     private String csvFile;
     private Set<Room> rooms;
@@ -33,7 +32,7 @@ public class CsvRoomsReader implements RoomsService, RoomsRepository {
         return capacity<=rooms.get().getCapacity();
     }
 
-    public Reservation getReservation(Reservation reservation) {
+    /*public Reservation getReservation(Reservation reservation) {
         Reservation result = null;
         for(Room room : rooms) {
             System.out.println(room);
@@ -42,24 +41,24 @@ public class CsvRoomsReader implements RoomsService, RoomsRepository {
             if(result!=null) return result;
         }
         return null;
-    }
+    }*/
 
 
 
-    @Override
+    /*@Override
     public void addReservation(Reservation r) {
         for (Room room : rooms) {
             if (room.getRoomId().equals(r.getRoomId())) {
                 room.add(r);
             }
         }
-    }
+    }*/
 
-    @Override
+
     public Set<RoomId> getAllIds() {
         return roomIds;
     }
-    @Override
+
     public boolean exists(String id){
         return rooms.stream().anyMatch(room -> room.getId().equals(id));
     }
@@ -68,7 +67,7 @@ public class CsvRoomsReader implements RoomsService, RoomsRepository {
         return rooms;
     }
 
-    @Override
+
     public void readAllRooms() {
         String line = "";
         String csvSplitBy = ","; // Délimiteur (ici une virgule)
@@ -82,10 +81,10 @@ public class CsvRoomsReader implements RoomsService, RoomsRepository {
                 // Utiliser la virgule pour séparer les colonnes
                 String[] room = line.split(csvSplitBy);
                 // Afficher les informations de chaque ligne
-                RoomId id = new RoomId(room[0]);
+                String id = room[0];
                 String name = room[1];
                 int capacity = Integer.parseInt(room[2]);
-                roomIds.add(id);
+                roomIds.add(new RoomId(id));
                 rooms.add(new Room(id, name, capacity));
                 System.out.println("Identifiant: " + id + ", Nom: " + name + ", Capacité: " + capacity);
             }

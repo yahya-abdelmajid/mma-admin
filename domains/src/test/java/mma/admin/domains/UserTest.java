@@ -3,9 +3,6 @@ package mma.admin.domains;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UserTest {
@@ -27,7 +24,7 @@ public class UserTest {
     void should_return_value_of_getters_when_there_are_calling(){
         assertEquals(user.getFullName(),"Jean Dupont");
         assertEquals(user.getEmail(),"j.dupont@helmo.be");
-        assertEquals(user.getMatricule(),"A123456");
+        assertEquals(user.getBadge(),"A123456");
     }
 
 }

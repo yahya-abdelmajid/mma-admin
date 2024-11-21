@@ -1,14 +1,9 @@
-import mma.admin.domains.Room;
 import mma.admin.domains.User;
-import mma.admin.domains.interfaces.UsersService;
-import mma.admin.infrastructures.CsvRoomsReader;
-import mma.admin.infrastructures.CsvUsersReader;
+import mma.admin.domains.interfaces.UsersReader;
+import mma.admin.infrastructures.csv.CsvUsersReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class CSVUsersReaderTest {
 
     private Set<User> users;
-    private UsersService csvUsers;
+    private UsersReader csvUsers;
 
     @BeforeEach
     public void setUp() {

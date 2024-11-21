@@ -1,20 +1,20 @@
 package mma.admin.domains;
 
 public class User {
-    private String matricule;
+    private String badge;
     private String fullName;
     private String email;
 
     // Constructeur
-    public User(String matricule, String fullName, String email) {
-        this.matricule = matricule;
+    public User(String badge, String fullName, String email) {
+        this.badge = badge;
         this.fullName = fullName;
         this.email = email;
     }
 
     // Getters
-    public String getMatricule() {
-        return matricule;
+    public String getBadge() {
+        return badge;
     }
 
     public String getFullName() {
@@ -28,6 +28,6 @@ public class User {
     // toString method for easy printing
     @Override
     public String toString() {
-        return String.format("%s (%s, %s)", fullName, matricule, email);
+        return String.format("%s (%s, %s)", fullName, badge, email);
     }
 }
