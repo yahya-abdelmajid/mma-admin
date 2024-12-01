@@ -2,11 +2,9 @@ package mma.admin.infrastructures.dao;
 
 import mma.admin.domains.Reservation;
 import mma.admin.domains.TimeSlot;
-import mma.admin.domains.User;
-import mma.admin.infrastructures.dao.interfaces.Dao;
+import mma.admin.domains.interfaces.dao.Dao;
 
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +22,7 @@ public class ReservationDAOImpl implements Dao<Reservation> {
             statement.setString(1,id);
             ResultSet resultSet = statement.executeQuery();
 
-            return new Reservation(
+            return new Reservation(resultSet.getInt("id"),
                     resultSet.getString("room_id"),
                     resultSet.getString("person_id"),
                     resultSet.getTimestamp("created_date").toLocalDateTime(),
@@ -45,7 +43,7 @@ public class ReservationDAOImpl implements Dao<Reservation> {
         try (PreparedStatement statement = connection.prepareStatement(query)) {
             ResultSet resultSet = statement.executeQuery();
             while(resultSet.next()) {
-                reservations.add(new Reservation(
+                reservations.add(new Reservation(resultSet.getInt("id"),
                         resultSet.getString("room_id"),
                         resultSet.getString("person_id"),
                         resultSet.getTimestamp("created_date").toLocalDateTime(),
@@ -60,19 +58,22 @@ public class ReservationDAOImpl implements Dao<Reservation> {
         }
     }
 
+
+
     @Override
     public void insert(Reservation object) {
-        String query = "INSERT INTO reservation (room_id, person_id, created_date, start_time, end_time, description) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO reservation (id,room_id, person_id, created_date, start_time, end_time, description) " +
+                "VALUES (?,?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
             // Remplir les paramètres de la requête préparée
-            statement.setString(1, object.getRoomId().getId());           // ID de la salle
-            statement.setString(2, object.getPersonId());      // ID de la personne
-            statement.setDate(3, Date.valueOf(object.getDate().toLocalDate())); // Date de réservation (LocalDate -> java.sql.Date)
-            statement.setTimestamp(4, Timestamp.valueOf(object.getTimeSlot().getStartTime())); // Début (LocalDateTime -> Timestamp)
-            statement.setTimestamp(5, Timestamp.valueOf(object.getTimeSlot().getEndTime()));   // Fin (LocalDateTime -> Timestamp)
-            statement.setString(6, object.getDescription());   // Description
+            statement.setInt(1, object.getId());
+            statement.setString(2, object.getRoomId().id());           // ID de la salle
+            statement.setString(3, object.getPersonId());      // ID de la personne
+            statement.setDate(4, Date.valueOf(object.getDate().toLocalDate())); // Date de réservation (LocalDate -> java.sql.Date)
+            statement.setTimestamp(5, Timestamp.valueOf(object.getTimeSlot().getStartTime())); // Début (LocalDateTime -> Timestamp)
+            statement.setTimestamp(6, Timestamp.valueOf(object.getTimeSlot().getEndTime()));   // Fin (LocalDateTime -> Timestamp)
+            statement.setString(7, object.getDescription());   // Description
 
             // Exécuter la requête d'insertion
             int rowsInserted = statement.executeUpdate();
@@ -82,10 +83,5 @@ public class ReservationDAOImpl implements Dao<Reservation> {
         } catch (SQLException e) {
             throw new RuntimeException("Error inserting reservation", e);
         }
-    }
-
-    @Override
-    public void update(Reservation object) {
-
     }
 }

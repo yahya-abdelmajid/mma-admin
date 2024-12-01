@@ -1,7 +1,7 @@
 package mma.admin.infrastructures.dao;
 
 import mma.admin.domains.User;
-import mma.admin.infrastructures.dao.interfaces.ReaderDao;
+import mma.admin.domains.interfaces.dao.ReaderDao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,7 +24,6 @@ public class UserDAOImpl implements ReaderDao<User> {
         try (PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1,id);
             ResultSet resultSet = statement.executeQuery();
-
             return new User(
                     resultSet.getString("badge"),
                     resultSet.getString("full_name"),
@@ -53,4 +52,5 @@ public class UserDAOImpl implements ReaderDao<User> {
             }
             return users;
     }
+
 }

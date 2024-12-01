@@ -1,4 +1,4 @@
-package mma.admin.infrastructures.dao.interfaces;
+package mma.admin.domains.interfaces.dao;
 
 import java.util.List;
 

@@ -10,51 +10,50 @@ import java.util.stream.Collectors;
 
 /**
  * Modèle de la salle de réunion avec ses créneaux horaires disponibles.
+ * Utilise un record pour simplifier la gestion des données immuables.
+ *
+ * @param roomId   Identifiant unique de la salle.
+ * @param name     Nom de la salle.
+ * @param capacity Capacité de la salle.
  */
-public class Room {
-    private final RoomId roomId;
-    private String name;
-    private int capacity;
+public record Room(RoomId roomId, String name, int capacity) {
 
     /**
-     * Constructeur pour initialiser une salle avec un nom et une liste de créneaux disponibles.
+     * Constructeur principal pour initialiser une salle.
      *
-     * @param name Le nom de la salle.
-     * @param capacity Le nom
+     * @param roomId   Identifiant unique de la salle.
+     * @param name     Nom de la salle.
+     * @param capacity Capacité de la salle.
      */
-    public Room(String roomId, String name, int capacity) {
-        this.roomId = new RoomId(roomId);
-        this.name = name;
-        this.capacity = capacity;
+    public Room {
+        if (roomId == null) {
+            throw new IllegalArgumentException("L'id de la salle ne peut pas être null.");
+        }
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Le nom ne peut pas être null.");
+        }
+        if (capacity <= 0) {
+            throw new IllegalArgumentException("La capacité doit être positive.");
+        }
     }
 
     /**
-     * @return Le nom de la salle.
+     * Retourne l'identifiant de la salle sous forme de chaîne.
+     *
+     * @return l'identifiant de la salle.
      */
-    public String getName() {
-        return name;
-    }
-
-    public RoomId getRoomId(){
-        return roomId;
-    }
-
     public String getId() {
         return roomId.toString();
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getCapacity() {
-        return capacity;
-    }
-    public void setCapacity(int capacity) {
-        this.capacity = capacity;
-    }
+    /**
+     * Retourne une représentation textuelle de la salle.
+     *
+     * @return une chaîne décrivant la salle.
+     */
     @Override
     public String toString() {
-        return "Room{id='" + roomId.id + "', name='" + name + "', capacity=" + capacity + "}";
+        return "Salle : " + name + " (Cap. " + capacity + ")\n";
     }
 }
+

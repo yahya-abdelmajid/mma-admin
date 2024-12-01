@@ -9,7 +9,7 @@ dependencies {
     implementation project(':infrastructures')
     implementation project(':views')
     implementation project(':domains')
-
+    implementation 'net.sf.jopt-simple:jopt-simple:5.0.4'
     // use to read args
     testImplementation 'com.tngtech.archunit:archunit-junit5:1.3.0'
 }

@@ -2,31 +2,25 @@ package mma.admin.domains;
 
 import java.util.Objects;
 
-public class RoomId {
+/**
+ * Représente un identifiant unique pour une salle.
+ *
+ * @param id L'identifiant de la salle.
+ */
+public record RoomId(String id) {
 
-    public String id;
-
-    public RoomId(String id) {
-        this.id = id;
-    }
-
-    public String getId() {
-        return id;
-    }
-
+    /**
+     * Retourne une représentation textuelle de l'identifiant de la salle.
+     *
+     * @return L'identifiant sous forme de chaîne de caractères.
+     */
     @Override
     public String toString() {
         return id;
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        RoomId that = (RoomId) o;
-
-        return Objects.equals(id, that.getId());
-    }
-
-
 }
+
+
+
+
+

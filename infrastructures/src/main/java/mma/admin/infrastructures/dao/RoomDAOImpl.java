@@ -1,14 +1,15 @@
 package mma.admin.infrastructures.dao;
 
 import mma.admin.domains.Room;
-import mma.admin.domains.User;
-import mma.admin.infrastructures.dao.interfaces.ReaderDao;
+import mma.admin.domains.RoomId;
+import mma.admin.domains.interfaces.dao.ReaderDao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class RoomDAOImpl implements ReaderDao<Room> {
@@ -26,7 +27,7 @@ public class RoomDAOImpl implements ReaderDao<Room> {
             ResultSet resultSet = statement.executeQuery();
 
             return new Room(
-                    resultSet.getString("id"),
+                    new RoomId(resultSet.getString("roomId")),
                     resultSet.getString("name"),
                     resultSet.getInt("capacity"));
         } catch (SQLException e) {
@@ -37,12 +38,12 @@ public class RoomDAOImpl implements ReaderDao<Room> {
     @Override
     public List<Room> findAll() {
         String query = "SELECT * FROM room";
-        List<Room> rooms = new ArrayList<>();
+        LinkedList<Room> rooms = new LinkedList<>();
         try (PreparedStatement statement = connection.prepareStatement(query)) {
             ResultSet resultSet = statement.executeQuery();
             while(resultSet.next()) {
                 rooms.add(new Room(
-                        resultSet.getString("id"),
+                        new RoomId(resultSet.getString("roomId")),
                         resultSet.getString("name"),
                         resultSet.getInt("capacity"))
                 );

@@ -1,20 +1,22 @@
 package mma.admin.infrastructures.service;
 
+import mma.admin.domains.Prestation;
 import mma.admin.domains.Reservation;
-import mma.admin.domains.User;
+import mma.admin.domains.interfaces.DataStorage;
 import mma.admin.infrastructures.sql.SQLDataStorage;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ReservationService {
 
-    private final SQLDataStorage dataStorage;
-    public ReservationService(SQLDataStorage dataStorage) {
+    private final DataStorage dataStorage;
+    public ReservationService(DataStorage dataStorage) {
         this.dataStorage=dataStorage;
     }
 
-    public void addReservationService(Reservation reservation) {
+    public void addReservation(Reservation reservation) throws SQLException {
         try{
             dataStorage.beginTransaction();
             dataStorage.getReservationDao().insert(reservation);
@@ -25,17 +27,7 @@ public class ReservationService {
         }
     }
 
-    public List<Reservation> getAllReservations() {
-        List<Reservation> reservations=new ArrayList<Reservation>();
-        try{
-            dataStorage.beginTransaction();
-            reservations=dataStorage.getReservationDao().findAll();
-            dataStorage.commitTransaction();
-            return reservations;
-        }catch (Exception e) {
-            dataStorage.rollbackTransaction();
-            e.printStackTrace();
-        }
-        return null;
+    public List<Reservation> getAllReservations() throws SQLException {
+        return dataStorage.getReservationDao().findAll();
     }
 }

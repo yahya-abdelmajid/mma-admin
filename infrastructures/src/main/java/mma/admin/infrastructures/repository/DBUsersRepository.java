@@ -1,32 +1,34 @@
 package mma.admin.infrastructures.repository;
 
 import mma.admin.domains.User;
-import mma.admin.domains.interfaces.UsersReader;
 import mma.admin.domains.interfaces.repository.UsersRepository;
+import mma.admin.infrastructures.ReservationDTO;
+import mma.admin.infrastructures.dto.ReservationMapper;
+import mma.admin.infrastructures.service.UserService;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class DBUsersRepository implements UsersRepository {
 
     private List<User> users;
 
-    public DBUsersRepository(UsersReader usersReader) {
-        users = usersReader.getUsers();
+    public DBUsersRepository(UserService userService) {
+        users = userService.getAllUsers();
     }
-
 
     @Override
     public List<User> getUsers() {
         return users;
     }
 
+    @Override
     public User getUser(String id){
-        return users.stream().filter(user -> user.getBadge().equals(id)).findFirst().get();
+        return users.stream().filter(user -> user.badge().equals(id)).findFirst().get();
     }
 
     @Override
     public boolean exists(String badge){
-        return users.stream().anyMatch(user -> user.getBadge().equals(badge));
+        return users.stream().anyMatch(user -> user.badge().equals(badge));
     }
 }

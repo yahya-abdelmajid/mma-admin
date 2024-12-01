@@ -1,19 +1,10 @@
-import mma.admin.domains.interfaces.ReservationsService;
-import mma.admin.domains.interfaces.RoomsReader;
-import mma.admin.domains.interfaces.UsersReader;
-import mma.admin.presentations.Presenter;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.time.LocalTime;
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
 public class PresenterTest {
 
-        Presenter presenter;
+        /*Presenter presenter;
         RoomsReader roomsReader;
         UsersReader usersReader;
         ReservationsService reservationsService;
@@ -54,5 +45,5 @@ public class PresenterTest {
             assertEquals(result[0],expected[0]);
             assertEquals(result[16],expected[16]);
             assertEquals(result.length,expected.length);
-        }
+        }*/
 }

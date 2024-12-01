@@ -24,7 +24,7 @@ public class RoomIdTest {
     //Vérifie les appels au getters
     @Test
     void should_return_value_of_getters_when_there_are_calling(){
-        assertEquals(roomId.getId(),"LC1");
+        assertEquals(roomId.id(),"LC1");
     }
 
 }

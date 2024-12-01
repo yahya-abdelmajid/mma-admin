@@ -6,34 +6,10 @@
 
 `Mma.Admin` est une application console pour administrer les occupations de salles de réunion. Elle permet, entre autres choses, de réserver des créneaux et de chercher des disponibilités.
 
-L'application est à déployer sur les postes des membres du personnel responsables d'administrer les salles de réunion.
-
 ## Développer le projet
 
 ### Prérequis
 
-Vous devez avoir le JDK 21 installé sur votre machine. Pour récupérer le projet, il est préférable d'avoir un client `git` installé. Enfin, nous vous recommandons d'utiliser un EDI comme IntelliJ ou Eclipse.
+Commande d'éxécution de l'application ex: ./gradlew run --args="--db=jdbc:mysql://192.168.132.200:13306 --user=q200042 --pwd=0042"
 
-**TODO:** indiquer les fichiers (nom + extension) de données requis par votre application
-
-> **NOTE**
-> 
-> **TODO :** indiquer le chemin vers des fichiers d'exemple.
-
-### Construction
-
-**TODO:** adaptez cet extrait pour que l'URL pointe sur votre projet.
-
-```bash
-# Clonez le dépôt
-> git clone https://git.helmo.be/lessons/info/ue36/activiteintegrative/mma.client.git
-
-> cd [le chemin vers le dépôt local] # Accédez au répertoire du projet
-> dotnet restore # Installez les dépendances 
-> dotnet build # Construisez le projet
-> dotnet test # Exécutez les tests unitaires
-```
-
-## Utilisation
-
-**TODO:** proposez un exemple de commande à exécuter pour lancer votre application depuis le terminal. Donnez assez de contexte, notamment vis-à-vis des arguments à transmettre
+Lors du lancement de l'application "des erreurs" s'affichent mais le menu fonctionne quand même, il vous juste d'encoder un numéro.

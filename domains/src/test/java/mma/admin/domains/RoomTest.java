@@ -13,91 +13,133 @@ import java.util.TreeSet;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
 class RoomTest {
 
-    private Room room;
-    private RoomId room_id;
+    @Test
+    void should_throw_exception_when_room_id_is_null() {
+        // Arrange
+        RoomId roomId = null;
+        String name = "Conference Room";
+        int capacity = 20;
 
-    @BeforeEach
-    void setup() {
-        room_id = new RoomId("Room1");
-        room = new Room(room_id, "Conference Room", 20);
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> new Room(roomId, name, capacity));
+        assertEquals("L'id de la salle ne peut pas être null.", exception.getMessage());
     }
 
     @Test
-    void get_name_should_return_correct_name() {
-        assertEquals("Conference Room", room.getName());
+    void should_throw_exception_when_name_is_null() {
+        // Arrange
+        RoomId roomId = new RoomId("Room1");
+        String name = null;
+        int capacity = 20;
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> new Room(roomId, name, capacity));
+        assertEquals("Le nom ne peut pas être null.", exception.getMessage());
     }
 
     @Test
-    void set_name_should_update_name() {
-        room.setName("New Room Name");
-        assertEquals("New Room Name", room.getName());
+    void should_throw_exception_when_name_is_blank() {
+        // Arrange
+        RoomId roomId = new RoomId("Room1");
+        String name = "  ";
+        int capacity = 20;
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> new Room(roomId, name, capacity));
+        assertEquals("Le nom ne peut pas être null.", exception.getMessage());
     }
 
     @Test
-    void get_capacity_should_return_correct_capacity() {
-        assertEquals(20, room.getCapacity());
+    void should_throw_exception_when_capacity_is_non_positive() {
+        // Arrange
+        RoomId roomId = new RoomId("Room1");
+        String name = "Conference Room";
+        int capacity = 0;
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> new Room(roomId, name, capacity));
+        assertEquals("La capacité doit être positive.", exception.getMessage());
     }
 
     @Test
-    void set_capacity_should_update_capacity() {
-        room.setCapacity(30);
-        assertEquals(30, room.getCapacity());
+    void should_return_correct_id_from_get_id() {
+        // Arrange
+        RoomId roomId = new RoomId("Room1");
+        Room room = new Room(roomId, "Conference Room", 20);
+
+        // Act
+        String id = room.getId();
+
+        // Assert
+        assertEquals("Room1", id);
     }
 
     @Test
-    void get_room_id_should_return_correct_room_id() {
-        assertEquals(room_id, room.getRoomId());
+    void should_return_correct_string_representation() {
+        // Arrange
+        RoomId roomId = new RoomId("Room1");
+        Room room = new Room(roomId, "Conference Room", 20);
+
+        // Act
+        String roomString = room.toString();
+
+        // Assert
+        assertEquals("Salle : Conference Room (Cap. 20)\n", roomString);
     }
 
     @Test
-    void get_reservations_should_return_empty_list_initially() {
-        TreeSet<Reservation> reservations = room.getReservations();
-        assertTrue(reservations.isEmpty());
+    void should_return_true_when_two_rooms_are_equal() {
+        // Arrange
+        RoomId roomId = new RoomId("Room1");
+        Room room1 = new Room(roomId, "Conference Room", 20);
+        Room room2 = new Room(roomId, "Conference Room", 20);
+
+        // Act & Assert
+        assertEquals(room1, room2);
     }
 
     @Test
-    void should_exception_raised_when_reservation_property_is_null() {
-        Reservation reservation = mock(Reservation.class);
+    void should_return_false_when_two_rooms_have_different_ids() {
+        // Arrange
+        RoomId roomId1 = new RoomId("Room1");
+        RoomId roomId2 = new RoomId("Room2");
+        Room room1 = new Room(roomId1, "Conference Room", 20);
+        Room room2 = new Room(roomId2, "Conference Room", 20);
 
-        try{
-            room.add(reservation);
-        }catch(NullPointerException e){
-            assertEquals(0, room.getReservations().size());
-            assertFalse(room.getReservations().contains(reservation));
-        }
+        // Act & Assert
+        assertNotEquals(room1, room2);
     }
 
     @Test
-    void get_ligne_menu_should_return_formatted_string_with_signe_for_matching_slots() {
-        LocalDate date = LocalDate.now();
-        LocalTime[] header = {LocalTime.of(9, 0), LocalTime.of(10, 0)};
-        Reservation reservation = mock(Reservation.class);
-        System.out.println(reservation);
+    void should_return_same_hash_code_for_identical_rooms() {
+        // Arrange
+        RoomId roomId = new RoomId("Room1");
+        Room room1 = new Room(roomId, "Conference Room", 20);
+        Room room2 = new Room(roomId, "Conference Room", 20);
 
-        when(reservation.isInTimeSlot(header[0])).thenReturn(true);
-        when(reservation.isInTimeSlot(header[1])).thenReturn(false);
-        when(reservation.isDate(date)).thenReturn(true);
+        // Act & Assert
+        assertEquals(room1.hashCode(), room2.hashCode());
     }
 
     @Test
-    void get_ligne_menu_should_return_empty_slots_when_no_reservations_match() {
-        LocalDate date = LocalDate.now();
-        LocalTime[] header = {LocalTime.of(9, 0), LocalTime.of(10, 0)};
+    void should_return_different_hash_codes_for_different_rooms() {
+        // Arrange
+        RoomId roomId1 = new RoomId("Room1");
+        RoomId roomId2 = new RoomId("Room2");
+        Room room1 = new Room(roomId1, "Conference Room", 20);
+        Room room2 = new Room(roomId2, "Conference Room", 20);
 
-        String expectedLine = String.format("%-10s%-10s%-10s", room.getId(), " ", " ");
-        assertEquals(expectedLine, room.getLigneMenu(header, date, "*"));
-    }
-
-    @Test
-    void get_id_should_return_room_id_as_string() {
-        assertEquals(room_id.toString(), room.getId());
-    }
-
-    @Test
-    void to_string_should_return_formatted_room_information() {
-        String expectedString = "Room{id='Room1', name='Conference Room', capacity=20}";
-        assertEquals(expectedString, room.toString());
+        // Act & Assert
+        assertNotEquals(room1.hashCode(), room2.hashCode());
     }
 }
+

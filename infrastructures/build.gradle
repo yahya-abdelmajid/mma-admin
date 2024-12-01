@@ -14,5 +14,7 @@ dependencies {
     implementation 'org.slf4j:slf4j-simple:1.7.36'
     implementation 'mysql:mysql-connector-java:8.0.33'
     implementation 'net.sf.jopt-simple:jopt-simple:5.0.4'
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
     testImplementation 'org.mockito:mockito-core'
 }

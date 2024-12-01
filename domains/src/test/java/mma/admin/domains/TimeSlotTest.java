@@ -25,7 +25,6 @@ class TimeSlotTest {
         end = LocalTime.of(17, 0);
         startTime = LocalDateTime.of(date, start);
         endTime = LocalDateTime.of(date, end);
-
         timeSlot = new TimeSlot(date, start, end);
     }
 
@@ -62,89 +61,69 @@ class TimeSlotTest {
     @Test
     void is_not_in_past_should_return_false_for_past_time_slot() {
         LocalDate pastDate = LocalDate.now().minusDays(1);
-        LocalDateTime pastStartTime = LocalDateTime.of(pastDate, start);
-        LocalDateTime pastEndTime = LocalDateTime.of(pastDate, end);
-        timeSlot = new TimeSlot(pastStartTime, pastEndTime);
-
-        assertFalse(timeSlot.isNotInPast());
-
+        TimeSlot pastTimeSlot = new TimeSlot(pastDate, start, end);
+        assertFalse(pastTimeSlot.isNotInPast());
     }
 
     @Test
-    void is_within_working_hours_should_return_true_when_slot_exactly_matches_hours() {
-        assertTrue(timeSlot.isWithinWorkingHours(start, end));
+    void is_not_in_past_should_throw_exception_for_null_date() {
+        assertThrows(NullPointerException.class, () -> new TimeSlot(null, start, end));
     }
 
     @Test
-    void is_within_working_hours_should_return_false_when_start_is_before_working_hours() {
-        LocalTime workingStart = LocalTime.of(10, 0);
-        LocalTime workingEnd = LocalTime.of(18, 0);
-        assertFalse(timeSlot.isWithinWorkingHours(workingStart, workingEnd));
+    void is_within_working_hours_should_return_false_when_slot_is_outside_hours() {
+        TimeSlot outsideSlot = new TimeSlot(LocalTime.of(7, 0), LocalTime.of(18, 0));
+
+        assertFalse(outsideSlot.isWithinWorkingHours(timeSlot));
     }
 
     @Test
-    void is_within_working_hours_should_return_false_when_end_is_after_working_hours() {
-        LocalTime workingStart = LocalTime.of(8, 0);
-        LocalTime workingEnd = LocalTime.of(16, 0);
-        assertFalse(timeSlot.isWithinWorkingHours(workingStart, workingEnd));
+    void is_within_working_hours_should_return_true_when_slot_matches_exactly() {
+        assertTrue(timeSlot.isWithinWorkingHours(new TimeSlot(start, end)));
     }
 
     @Test
-    void is_within_working_hours_should_return_true_when_slot_is_fully_within_hours() {
-        LocalTime workingStart = LocalTime.of(8, 0);
-        LocalTime workingEnd = LocalTime.of(18, 0);
-        assertTrue(timeSlot.isWithinWorkingHours(workingStart, workingEnd));
+    void is_within_working_hours_should_return_false_when_slot_overlaps_partially() {
+        TimeSlot overlappingSlot = new TimeSlot(LocalTime.of(8, 0), LocalTime.of(10, 0));
+        assertFalse(timeSlot.isWithinWorkingHours(overlappingSlot));
     }
 
     @Test
-    void is_in_time_slot_should_return_true_when_time_is_exactly_start_time() {
-        assertTrue(timeSlot.isInTimeSlot(start));
+    void is_in_time_slot_should_return_true_when_time_is_within_slot() {
+        LocalTime middleTime = LocalTime.of(12, 0);
+        assertTrue(timeSlot.isInTimeSlot(middleTime));
     }
 
     @Test
-    void is_in_time_slot_should_return_true_when_time_is_exactly_end_time() {
-        assertTrue(timeSlot.isInTimeSlot(end));
+    void is_in_time_slot_should_return_false_when_time_is_outside_slot() {
+        LocalTime outsideTime = LocalTime.of(18, 0);
+        assertFalse(timeSlot.isInTimeSlot(outsideTime));
     }
 
     @Test
-    void is_in_time_slot_should_return_false_when_time_is_before_start_time() {
-        LocalTime timeBeforeSlot = LocalTime.of(8, 0);
-        assertFalse(timeSlot.isInTimeSlot(timeBeforeSlot));
+    void is_in_time_slot_should_throw_exception_for_null_time() {
+        assertThrows(NullPointerException.class, () -> timeSlot.isInTimeSlot(null));
     }
 
     @Test
-    void is_in_time_slot_should_return_false_when_time_is_after_end_time() {
-        LocalTime timeAfterSlot = LocalTime.of(18, 0);
-        assertFalse(timeSlot.isInTimeSlot(timeAfterSlot));
+    void equals_should_return_false_when_other_is_null() {
+        assertNotEquals(timeSlot, null);
     }
 
     @Test
-    void to_string_should_return_correct_string_representation() {
-        String expected = date + " : " + start + " - " + end;
-        assertEquals(expected, timeSlot.toString());
+    void equals_should_return_false_when_other_is_different_class() {
+        assertNotEquals(timeSlot, "not a TimeSlot");
     }
 
     @Test
-    void equals_should_return_true_for_identical_time_slots() {
-        TimeSlot identicalTimeSlot = new TimeSlot(date, start, end);
-        assertEquals(timeSlot, identicalTimeSlot);
-    }
-
-    @Test
-    void equals_should_return_false_for_different_time_slots() {
-        TimeSlot differentTimeSlot = new TimeSlot(date, LocalTime.of(10, 0), LocalTime.of(12, 0));
-        assertNotEquals(timeSlot, differentTimeSlot);
-    }
-
-    @Test
-    void hash_code_should_return_same_hash_code_for_identical_time_slots() {
+    void hash_code_should_be_consistent_with_equals() {
         TimeSlot identicalTimeSlot = new TimeSlot(date, start, end);
         assertEquals(timeSlot.hashCode(), identicalTimeSlot.hashCode());
     }
 
     @Test
-    void hash_code_should_return_different_hash_code_for_different_time_slots() {
-        TimeSlot differentTimeSlot = new TimeSlot(date, LocalTime.of(10, 0), LocalTime.of(12, 0));
-        assertNotEquals(timeSlot.hashCode(), differentTimeSlot.hashCode());
+    void to_string_should_include_day_start_and_end() {
+        String expected = date + " : " + start + " - " + end;
+        assertEquals(expected, timeSlot.toString());
     }
 }

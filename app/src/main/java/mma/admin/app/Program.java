@@ -4,42 +4,122 @@
 package mma.admin.app;
 
 
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 import mma.admin.domains.Reservation;
-import mma.admin.domains.RoomId;
-import mma.admin.domains.TimeSlot;
 import mma.admin.domains.User;
-import mma.admin.domains.interfaces.ReservationsService;
-import mma.admin.domains.interfaces.RoomsReader;
-import mma.admin.domains.interfaces.UsersReader;
-import mma.admin.infrastructures.csv.CsvRoomsReader;
-import mma.admin.infrastructures.csv.CsvUsersReader;
-import mma.admin.infrastructures.csv.ICSReservationsImpl;
-import mma.admin.infrastructures.dao.interfaces.ReaderDao;
+import mma.admin.domains.interfaces.DataStorage;
+import mma.admin.domains.interfaces.repository.CalendarsRepository;
+import mma.admin.domains.interfaces.repository.RoomsRepository;
+import mma.admin.domains.interfaces.repository.UsersRepository;
+import mma.admin.infrastructures.repository.DBCalendarsRepository;
+import mma.admin.infrastructures.repository.DBRoomsRepository;
+import mma.admin.infrastructures.repository.DBUsersRepository;
+import mma.admin.infrastructures.service.PrestationService;
 import mma.admin.infrastructures.service.ReservationService;
+import mma.admin.infrastructures.service.RoomService;
 import mma.admin.infrastructures.service.UserService;
 import mma.admin.infrastructures.sql.SQLDataStorage;
 import mma.admin.infrastructures.sql.SQLDataStorageFactory;
 import mma.admin.presentations.Presenter;
 import mma.admin.views.View;
-
 import java.io.IOException;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.List;
+import java.util.Scanner;
 
 public class Program {
-    public static void main(String[] args) throws IOException, ParseException {
+    public static void main(String[] args) throws IOException, ParseException, SQLException {
 
-        SQLDataStorageFactory storageFactory=new SQLDataStorageFactory("jdbc:mysql://192.168.132.200:13306/Q240275","Q240275","0275");
-        SQLDataStorage sqlDataStorage=storageFactory.getSQLDataStorage();
+        OptionParser parser = new OptionParser();
 
-        UserService userService=new UserService(sqlDataStorage);
+        // Définir les options attendues
+        parser.accepts("db").withRequiredArg().describedAs("Adresse de la base de données (ex: user@host:port)");
+        parser.accepts("user").withRequiredArg().describedAs("Nom d'utilisateur");
+        parser.accepts("pwd").withRequiredArg().describedAs("Mot de passe");
 
-        for(User user:userService.getAllUsers()) {
-            System.out.println(user.getBadge());
+        // Analyser les arguments passés
+        OptionSet options = parser.parse(args);
+        String db = "";
+        String user = "";
+        String pwd = "";
+        String connection = "";
+        // Vérifier si les options nécessaires sont présentes
+        if (options.has("db") && options.has("user") && options.has("pwd")) {
+            db = (String) options.valueOf("db");
+            user = (String) options.valueOf("user");
+            pwd = (String) options.valueOf("pwd");
+
+            System.out.println("Connexion à la base de données avec les paramètres suivants :");
+            System.out.println("DB: " + db);
+            System.out.println("Utilisateur: " + user);
+            System.out.println("Mot de passe: " + pwd);
+            connection = String.format("%s/%s", db, user);
+            // Ajouter la logique de connexion ici
+            System.out.println(connection);
+        } else {
+            System.err.println("Erreur : argument requis db manquant ou incorrect");
         }
+        //./gradlew run --args="--db=jdbc:mysql://192.168.132.200:13306 --user=q200042 --pwd=0042"
+
+        SQLDataStorageFactory storageFactory = new SQLDataStorageFactory("jdbc:mysql://192.168.132.200:13306/Q240275", "Q240275", "0275");
+        DataStorage sqlDataStorage = storageFactory.getSQLDataStorage();
+
+        UserService userService = new UserService(sqlDataStorage);
+
+        RoomService roomService = new RoomService(sqlDataStorage);
+        ReservationService reservationsService = new ReservationService(sqlDataStorage);
+        PrestationService prestationService = new PrestationService(sqlDataStorage);
+
+        UsersRepository userRep = new DBUsersRepository(userService);
+        RoomsRepository roomsRep = new DBRoomsRepository(roomService);
+        CalendarsRepository calRep = new DBCalendarsRepository(reservationsService, prestationService, roomsRep.getRooms());
+        View view = new View();
+        Presenter presenter = new Presenter(view,calRep, userRep, roomsRep);
+        //presenter.addReservations("LB1","E567890","2024-10-28","09:30","12:30","Kickoff trapèze",3);
+
+        view.displayGrid(LocalDate.now());
+
+
+        Scanner scanner = new Scanner(System.in);
+        boolean quit = false;
+
+        while (!quit) {
+            System.out.println("\n--- Menu ---");
+            System.out.println("1. Changer la date à afficher (format yyyy-mm-dd)");
+            System.out.println("2. Ajouter une réservation");
+            System.out.println("3. Consulter une réservation");
+            System.out.println("4. Chercher une salle disponible");
+            System.out.println("5. Quitter");
+            System.out.print("Veuillez choisir une option : ");
+
+            String choix = scanner.nextLine();
+
+            switch (choix) {
+                case "1":
+                    System.out.println("Utilisez le format yyyy-mm-dd");
+                    view.setDate(scanner);
+                    break;
+                case "2":
+                    //les valeurs sont par défaut pour l'instant
+                    view.addReservation(scanner);
+                    break;
+                case "3":
+                    view.displayReservation(scanner);
+                    break;
+                case "4":
+                    view.searchAvailabilityRoom(scanner);
+                    break;
+                case "5":
+                    System.out.println("Fermeture du programme...");
+                    sqlDataStorage.closeConnection();
+                    quit = true;
+                    break;
+                default:
+                    System.out.println("Choix non valide. Veuillez réessayer.");
+                    break;
+            }
 
         /*ReservationService reservationService=new ReservationService(sqlDataStorage);
         String personId = "A123456";
@@ -57,24 +137,16 @@ public class Program {
         }*/
 
 
+            //Presenter presenter= new Presenter(calRep,userRep,roomsRep);
+            //presenter.addReservations("LB1","E567890","2024-10-28","09:30","12:30","Kickoff trapèze",3);
+
+            //View view=new View(presenter);
+            //view.displayGrid(LocalDate.now());
+            //view.displayMenu();
+
+            //view.searchReservation("2024-10-28","LB1","09:30","12:30");
 
 
-        /*RoomsReader roomsReader =new CsvRoomsReader("../domains/src/main/resources/dir/rooms.csv");
-        UsersReader usersReader=new CsvUsersReader("../domains/src/main/resources/dir/users.csv");
-        ReservationsService reservationsImpl= new ICSReservationsImpl("../domains/src/main/resources/dir/reservations.ics",roomsReader);
-        usersReader.readAllUsers();
-        roomsReader.readAllRooms();
-
-        Presenter presenter= new Presenter(reservationsImpl, roomsReader,usersReader);
-        presenter.readAllReservations();
-        //presenter.addReservations("LB1","E567890","2024-10-28","09:30","12:30","Kickoff trapèze",3);
-
-        View view=new View(presenter);
-        view.displayGrid(LocalDate.now());
-        view.displayMenu();
-
-        //view.searchReservation("2024-10-28","LB1","09:30","12:30");
-
-         */
+        }
     }
 }

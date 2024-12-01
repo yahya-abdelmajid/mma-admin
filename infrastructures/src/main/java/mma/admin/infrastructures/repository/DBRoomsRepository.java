@@ -1,23 +1,20 @@
 package mma.admin.infrastructures.repository;
 
-import mma.admin.domains.Reservation;
 import mma.admin.domains.Room;
 import mma.admin.domains.RoomId;
-import mma.admin.domains.interfaces.RoomsReader;
 import mma.admin.domains.interfaces.repository.RoomsRepository;
+import mma.admin.infrastructures.service.RoomService;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public class DBRoomsRepository implements RoomsRepository {
 
     private List<Room> rooms;
-    private Set<RoomId> roomIds;
 
-    public DBRoomsRepository(RoomsReader roomsReader)
+    public DBRoomsRepository(RoomService roomService)
     {
-        rooms = roomsReader.getRooms();
+        rooms = roomService.getAllRooms();
     }
 
     public List<Room> getRooms(){
@@ -32,6 +29,11 @@ public class DBRoomsRepository implements RoomsRepository {
     @Override
     public boolean capacityRoomIsNotExceeded(String roomId, int capacity) {
         Optional<Room> rooms=this.rooms.stream().filter(room -> room.getId().equals(roomId)).findFirst();
-        return capacity<=rooms.get().getCapacity();
+        return capacity<=rooms.get().capacity();
+    }
+
+    @Override
+    public Room getRoom(RoomId id){
+        return rooms.stream().filter(room -> room.roomId().equals(id)).findFirst().get();
     }
 }
