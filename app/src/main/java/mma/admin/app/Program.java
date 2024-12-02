@@ -61,9 +61,9 @@ public class Program {
         } else {
             System.err.println("Erreur : argument requis db manquant ou incorrect");
         }
-        //./gradlew run --args="--db=jdbc:mysql://192.168.132.200:13306 --user=q200042 --pwd=0042"
+        //./gradlew run --args="--db=jdbc:mysql://192.168.132.200:13306 --user=Q240275 --pwd=0275"
 
-        SQLDataStorageFactory storageFactory = new SQLDataStorageFactory("jdbc:mysql://192.168.132.200:13306/Q240275", "Q240275", "0275");
+        SQLDataStorageFactory storageFactory = new SQLDataStorageFactory(connection, user, pwd);
         DataStorage sqlDataStorage = storageFactory.getSQLDataStorage();
 
         UserService userService = new UserService(sqlDataStorage);
