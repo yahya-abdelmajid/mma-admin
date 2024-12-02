@@ -11,6 +11,6 @@
 ### Prérequis
 
 Commande d'éxécution de l'application ex: ./gradlew run --args="--db=jdbc:mysql://192.168.132.200:13306 --user=Q240275 --pwd=0275"
-Ce sont également les données de connexion à la base de donnée
+Ce sont également les données de connexion à ma base de donnée
 
-Lors du lancement de l'application "des erreurs" s'affichent mais le menu fonctionne quand même, il vous juste d'encoder un numéro.
+Lors du lancement de l'application "des erreurs" s'affichent mais le menu fonctionne quand même, il faut s'implement encoder un numéro.
