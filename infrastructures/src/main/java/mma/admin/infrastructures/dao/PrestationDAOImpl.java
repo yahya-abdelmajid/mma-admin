@@ -9,24 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PrestationDAOImpl implements PrestationDao {
-    private Connection connection;
+    private final Connection connection;
     public PrestationDAOImpl(Connection connection) {
         this.connection = connection;
-    }
-
-    @Override
-    public Prestation findById(String id) {
-        String query = "SELECT * FROM service WHERE id = ?";
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1,id);
-            ResultSet resultSet = statement.executeQuery();
-
-            return new Prestation(
-                    resultSet.getInt("id"),
-                    resultSet.getString("description"));
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
@@ -34,9 +19,9 @@ public class PrestationDAOImpl implements PrestationDao {
         String query = "SELECT * FROM service";
         List<Prestation> prestations = new ArrayList<>();
 
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            ResultSet resultSet = statement.executeQuery();
-            while(resultSet.next()) {
+        try (PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) { // ResultSet géré dans try-with-resources
+            while (resultSet.next()) {
                 prestations.add(new Prestation(
                         resultSet.getInt("id"),
                         resultSet.getString("description"))
@@ -44,25 +29,26 @@ public class PrestationDAOImpl implements PrestationDao {
             }
             return prestations;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Database error while fetching all Prestations", e);
         }
     }
 
+    @Override
     public List<ReservationPrestation> findAllReservationService() {
         String query = "SELECT * FROM reservation_service";
-        List<ReservationPrestation> reservationPrestation = new ArrayList<>();
+        List<ReservationPrestation> reservationPrestations = new ArrayList<>();
 
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            ResultSet resultSet = statement.executeQuery();
-            while(resultSet.next()) {
-                reservationPrestation.add(new ReservationPrestation(
+        try (PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) { // ResultSet géré dans try-with-resources
+            while (resultSet.next()) {
+                reservationPrestations.add(new ReservationPrestation(
                         resultSet.getInt("reservation_id"),
                         resultSet.getInt("service_id"))
                 );
             }
-            return reservationPrestation;
+            return reservationPrestations;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Database error while fetching reservations", e);
         }
     }
 
@@ -74,15 +60,11 @@ public class PrestationDAOImpl implements PrestationDao {
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
             // Remplir les paramètres de la requête préparée
-            System.out.println("bonjour");
             statement.setInt(1, reservationId);
             statement.setInt(2, serviceId);
-            System.out.println("bonjour");
             // Exécuter la requête d'insertion
-            int rowsInserted = statement.executeUpdate();
-            if (rowsInserted > 0) {
-                System.out.println("Reservation service successfully inserted!");
-            }
+            statement.executeUpdate();
+
         } catch (SQLException e) {
             throw new RuntimeException("Error inserting reservation", e);
         }

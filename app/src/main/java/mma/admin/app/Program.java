@@ -6,20 +6,23 @@ package mma.admin.app;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import mma.admin.domains.Reservation;
-import mma.admin.domains.User;
+import mma.admin.domains.Agenda;
+import mma.admin.domains.Room;
+import mma.admin.domains.RoomId;
 import mma.admin.domains.interfaces.DataStorage;
 import mma.admin.domains.interfaces.repository.CalendarsRepository;
 import mma.admin.domains.interfaces.repository.RoomsRepository;
 import mma.admin.domains.interfaces.repository.UsersRepository;
+import mma.admin.domains.interfaces.service.PrestationService;
+import mma.admin.domains.interfaces.service.ReservationService;
+import mma.admin.domains.interfaces.service.RoomService;
+import mma.admin.domains.interfaces.service.UserService;
 import mma.admin.infrastructures.repository.DBCalendarsRepository;
 import mma.admin.infrastructures.repository.DBRoomsRepository;
 import mma.admin.infrastructures.repository.DBUsersRepository;
-import mma.admin.infrastructures.service.PrestationService;
-import mma.admin.infrastructures.service.ReservationService;
-import mma.admin.infrastructures.service.RoomService;
-import mma.admin.infrastructures.service.UserService;
-import mma.admin.infrastructures.sql.SQLDataStorage;
+import mma.admin.infrastructures.service.DBReservationService;
+import mma.admin.infrastructures.service.DBRoomService;
+import mma.admin.infrastructures.service.DBUserService;
 import mma.admin.infrastructures.sql.SQLDataStorageFactory;
 import mma.admin.presentations.Presenter;
 import mma.admin.views.View;
@@ -27,7 +30,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.time.LocalDate;
-import java.util.Scanner;
+import java.util.*;
 
 public class Program {
     public static void main(String[] args) throws IOException, ParseException, SQLException {
@@ -63,18 +66,33 @@ public class Program {
         }
         //./gradlew run --args="--db=jdbc:mysql://192.168.132.200:13306 --user=Q240275 --pwd=0275"
 
-        SQLDataStorageFactory storageFactory = new SQLDataStorageFactory(connection, user, pwd);
-        DataStorage sqlDataStorage = storageFactory.getSQLDataStorage();
+        connection = String.format("%s/%s", db,user+"?user="+user+"&password="+pwd);
 
-        UserService userService = new UserService(sqlDataStorage);
+        System.out.println(connection);
+        //pwd="0275";
+        //connection+="/"+pwd;
 
-        RoomService roomService = new RoomService(sqlDataStorage);
-        ReservationService reservationsService = new ReservationService(sqlDataStorage);
-        PrestationService prestationService = new PrestationService(sqlDataStorage);
+        SQLDataStorageFactory storageFactory = new SQLDataStorageFactory(connection);
+        DataStorage dataStorage = storageFactory.getSQLDataStorage();
 
-        UsersRepository userRep = new DBUsersRepository(userService);
-        RoomsRepository roomsRep = new DBRoomsRepository(roomService);
-        CalendarsRepository calRep = new DBCalendarsRepository(reservationsService, prestationService, roomsRep.getRooms());
+        UserService DBUserService = new DBUserService(dataStorage);
+
+        RoomService DBRoomService = new DBRoomService(dataStorage);
+        ReservationService reservationsService = new DBReservationService(dataStorage);
+
+        UsersRepository userRep = new DBUsersRepository(DBUserService);
+        RoomsRepository roomsRep = new DBRoomsRepository(DBRoomService);
+
+
+        Map<RoomId,Agenda> calendars=new LinkedHashMap<>();
+
+        for (Room r : roomsRep.getRooms()) {
+            calendars.put(r.roomId(),new Agenda(r));
+        }
+
+        CalendarsRepository calRep = new DBCalendarsRepository(reservationsService, calendars);
+
+        // userRep.readAllTransactions("C:\\Temp\\transaction.csv");
         View view = new View();
         Presenter presenter = new Presenter(view,calRep, userRep, roomsRep);
         //presenter.addReservations("LB1","E567890","2024-10-28","09:30","12:30","Kickoff trapèze",3);
@@ -113,7 +131,7 @@ public class Program {
                     break;
                 case "5":
                     System.out.println("Fermeture du programme...");
-                    sqlDataStorage.closeConnection();
+                    dataStorage.closeConnection();
                     quit = true;
                     break;
                 default:

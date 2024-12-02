@@ -1,27 +1,34 @@
 package mma.admin.infrastructures.sql;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class SQLDataStorageFactory {
-    private String dbUrl;
-    private String dbUser;
-    private String dbPassword;
+    private Logger logger = LogManager.getLogger();
+    private final String connectionString;
 
-    public SQLDataStorageFactory(String dbUrl, String dbUser, String dbPassword) {
-        this.dbUrl = dbUrl;
-        this.dbUser = dbUser;
-        this.dbPassword = dbPassword;
+    public SQLDataStorageFactory(String connectionString) {
+        this.connectionString=connectionString;
+    }
+
+    public void setLOGGER(Logger logger) {
+        this.logger=logger;
     }
 
     public SQLDataStorage getSQLDataStorage() {
         try{
-            Connection connection= DriverManager.getConnection(dbUrl,dbUser,dbPassword);
+            Connection connection= DriverManager.getConnection(connectionString);
             if (connection != null) {
-                System.out.println("La connexion est réussie !");
+                logger.info("La connexion est réussie !");
             } else {
-                System.out.println("Échec de la connexion.");
+                logger.error("Échec de la connexion.");
             }
             return new SQLDataStorage(connection);
         }catch(SQLException e){

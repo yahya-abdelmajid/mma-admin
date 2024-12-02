@@ -1,6 +1,4 @@
-package IMainView;
-
-import mma.admin.presentations.Presenter;
+package mma.admin.presentations;
 
 public interface IView {
     void displayMessage(String message);

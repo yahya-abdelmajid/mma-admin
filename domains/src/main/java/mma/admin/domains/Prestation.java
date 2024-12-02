@@ -3,65 +3,46 @@ package mma.admin.domains;
 /**
  * Représente une prestation avec un identifiant unique et une description.
  *
- * Cette classe est utilisée pour décrire des services ou des prestations
+ * Cette classe (sous forme de record) est utilisée pour décrire des services ou des prestations
  * associés à une entité, comme une réservation ou un agenda.
+ *
+ * Les records en Java fournissent une structure immuable et concise pour des objets contenant
+ * principalement des données.
  */
-public class Prestation {
+public record Prestation(
+        /**
+         * L'identifiant unique de la prestation.
+         */
+        int id,
 
+        /**
+         * La description détaillée de la prestation.
+         */
+        String description
+) {
     /**
-     * L'identifiant unique de la prestation.
-     */
-    private int id;
-
-    /**
-     * La description détaillée de la prestation.
-     */
-    private String description;
-
-    /**
-     * Constructeur avec paramètres.
+     * Constructeur principal.
      *
      * @param id          l'identifiant unique de la prestation
      * @param description la description de la prestation
      */
-    public Prestation(int id, String description) {
-        this.id = id;
-        this.description = description;
+    public Prestation {
+        // Validation ou transformation des paramètres, si nécessaire
+        if (id <= 0) {
+            throw new IllegalArgumentException("L'identifiant doit être un entier positif.");
+        }
+        if (description == null || description.isBlank()) {
+            throw new IllegalArgumentException("La description ne peut pas être vide ou nulle.");
+        }
     }
 
     /**
-     * Constructeur par défaut.
+     * Méthode supplémentaire pour afficher les détails de la prestation.
      *
-     * Ce constructeur est utile pour les cas où les valeurs des attributs
-     * sont définies ultérieurement via des méthodes d'accès (getters et setters).
+     * @return une chaîne contenant les détails de la prestation.
      */
-    public Prestation() {}
-
-    /**
-     * Retourne l'identifiant de la prestation.
-     *
-     * @return l'identifiant unique de la prestation
-     */
-    public int getId() {
-        return id;
-    }
-
-    /**
-     * Retourne la description de la prestation.
-     *
-     * @return la description de la prestation
-     */
-    public String getDescription() {
-        return description;
-    }
-
-    /**
-     * Modifie la description de la prestation.
-     *
-     * @param description la nouvelle description de la prestation
-     */
-    public void setDescription(String description) {
-        this.description = description;
+    @Override
+    public String toString() {
+        return "Prestation{id=" + id + ", description='" + description + "'}";
     }
 }
-

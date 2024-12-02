@@ -77,13 +77,13 @@ public class Availability implements Comparable<Availability>, Comparator<Availa
      * - La durée du créneau horaire.
      * - L'adéquation entre la capacité de la salle et la capacité demandée.
      *
-     * @param date     la date de la disponibilité
+     * @param currentDate     la date de la disponibilité
      * @param room     la salle associée
      * @param duration la durée du créneau horaire souhaitée
      * @param capacity la capacité demandée
      */
-    public void calculatorScore(LocalDate date, Room room, Duration duration, int capacity) {
-        int scoreDate = 100 - Math.abs((int) ChronoUnit.DAYS.between(LocalDate.now(), date)) * 20;
+    public void calculatorScore(LocalDate desiredDate,LocalDate currentDate, Room room, Duration duration, int capacity) {
+        int scoreDate = 100 - Math.abs((int) ChronoUnit.DAYS.between(desiredDate, currentDate)) * 20;
         int scoreDuration = 100 - Math.abs((int) Duration.between(ts.getStart(), ts.getEnd()).toMinutes()) / 10;
         int scoreCapacity = 100 - Math.abs(room.capacity() - capacity);
 

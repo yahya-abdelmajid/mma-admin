@@ -15,6 +15,8 @@ dependencies {
     implementation 'mysql:mysql-connector-java:8.0.33'
     implementation 'net.sf.jopt-simple:jopt-simple:5.0.4'
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    implementation group: 'org.xerial',name: 'sqlite-jdbc',version: '3.47.0.0'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
     testImplementation 'org.mockito:mockito-core'
+
 }

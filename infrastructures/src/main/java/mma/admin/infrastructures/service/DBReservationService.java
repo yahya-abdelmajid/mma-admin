@@ -4,24 +4,40 @@ import mma.admin.domains.Prestation;
 import mma.admin.domains.Reservation;
 import mma.admin.domains.ReservationPrestation;
 import mma.admin.domains.interfaces.DataStorage;
-import mma.admin.infrastructures.sql.SQLDataStorage;
+import mma.admin.domains.interfaces.service.ReservationService;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
-public class PrestationService {
+public class DBReservationService implements ReservationService {
 
     private final DataStorage dataStorage;
-    public PrestationService(DataStorage dataStorage) {
+    public DBReservationService(DataStorage dataStorage) {
         this.dataStorage=dataStorage;
     }
 
+    @Override
+    public void addReservation(Reservation reservation) throws SQLException {
+        try{
+            dataStorage.beginTransaction();
+            dataStorage.getReservationDao().insert(reservation);
+            dataStorage.commitTransaction();
+        }catch (Exception e) {
+            dataStorage.rollbackTransaction();
+            e.printStackTrace();
+        }
+    }
+    @Override
+    public List<Reservation> getAllReservations(){
+        return dataStorage.getReservationDao().findAll();
+    }
+
+    @Override
     public void addReservationAndService(Reservation reservation) throws SQLException {
         try{
             dataStorage.beginTransaction();
             for(Prestation p: reservation.getPrestations()) {
-                dataStorage.getPrestationDao().insert(reservation.getId(), p.getId());
+                dataStorage.getPrestationDao().insert(reservation.getId(), p.id());
             }
             dataStorage.commitTransaction();
         }catch (Exception e) {
@@ -30,9 +46,11 @@ public class PrestationService {
         }
     }
 
-    public List<ReservationPrestation> getAllReservationService() throws SQLException {
+    @Override
+    public List<ReservationPrestation> getAllReservationService(){
         return dataStorage.getPrestationDao().findAllReservationService();}
 
+    @Override
     public List<Prestation> getAllPrestations() {
         return dataStorage.getPrestationDao().findAll();
     }

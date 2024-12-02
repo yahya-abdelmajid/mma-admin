@@ -1,23 +1,9 @@
 package mma.admin.domains;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -45,24 +31,21 @@ public class Reservation implements Comparable<Reservation> {
     private final String personId;
 
     /**
-     * Date et heure de la réservation.
-     */
-    private final LocalDateTime date;
-
-    /**
      * Créneau horaire (début et fin) de la réservation.
      */
-    private TimeSlot timeSlot;
+    private final TimeSlot timeSlot;
 
     /**
      * Description de la réservation.
      */
-    private String description;
+    private final String description;
 
     /**
      * Liste des prestations associées à cette réservation.
      */
-    private List<Prestation> prestations;
+    private final List<Prestation> prestations;
+
+    private final int expectedPerson;
 
     /**
      * Constructeur permettant de créer une réservation avec tous les détails.
@@ -70,21 +53,28 @@ public class Reservation implements Comparable<Reservation> {
      * @param id          l'identifiant unique de la réservation
      * @param roomId      le nom de la salle réservée
      * @param personId    le matricule de la personne ayant effectué la réservation
-     * @param dateTime    la date et l'heure de la réservation
      * @param timeSlot    le créneau horaire réservé
      * @param description une description de la réservation
      */
-    public Reservation(int id, String roomId, String personId, LocalDateTime dateTime, TimeSlot timeSlot, String description) {
+    public Reservation(int id, String roomId, String personId, TimeSlot timeSlot, String description,int expectedPerson) {
+        if (roomId == null || timeSlot == null) {
+            throw new IllegalArgumentException("L'identifiant de la salle et le créneau horaire ne peuvent pas être nuls.");
+        }
+        if (personId == null || personId.trim().isEmpty()) {
+            throw new IllegalArgumentException("L'identifiant de la personne ne peut pas être nul ou vide.");
+        }
+        if (description != null && description.length() > 500) {
+            throw new IllegalArgumentException("La description ne peut pas dépasser 500 caractères.");
+        }
+
         this.id = id;
         this.roomId = new RoomId(roomId);
         this.personId = personId;
-        this.date = dateTime;
         this.description = description;
         this.timeSlot = timeSlot;
         this.prestations = new ArrayList<>();
+        this.expectedPerson = expectedPerson;
     }
-
-    // Getters
 
     /**
      * Retourne l'identifiant unique de la réservation.
@@ -114,15 +104,6 @@ public class Reservation implements Comparable<Reservation> {
     }
 
     /**
-     * Retourne la date et l'heure de la réservation.
-     *
-     * @return la date et l'heure
-     */
-    public LocalDateTime getDate() {
-        return date;
-    }
-
-    /**
      * Retourne la description de la réservation.
      *
      * @return la description
@@ -140,45 +121,18 @@ public class Reservation implements Comparable<Reservation> {
         return timeSlot;
     }
 
+    public int getExpectedPerson() {
+        return expectedPerson;
+    }
+
     /**
      * Retourne la liste des prestations associées à cette réservation.
      *
      * @return la liste des prestations
      */
     public List<Prestation> getPrestations() {
-        return prestations;
+        return Collections.unmodifiableList(prestations);
     }
-
-    // Setters
-
-    /**
-     * Modifie le créneau horaire de la réservation.
-     *
-     * @param timeSlot le nouveau créneau horaire
-     */
-    public void setTimeSlot(TimeSlot timeSlot) {
-        this.timeSlot = timeSlot;
-    }
-
-    /**
-     * Modifie la description de la réservation.
-     *
-     * @param description la nouvelle description
-     */
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    /**
-     * Modifie la liste des prestations associées à cette réservation.
-     *
-     * @param prestations la nouvelle liste de prestations
-     */
-    public void setPrestations(List<Prestation> prestations) {
-        this.prestations = prestations;
-    }
-
-    // Méthodes spécifiques
 
     /**
      * Ajoute une prestation à la liste des prestations associées.
@@ -186,6 +140,12 @@ public class Reservation implements Comparable<Reservation> {
      * @param prestation la prestation à ajouter
      */
     public void addPrestation(Prestation prestation) {
+        if (prestation == null) {
+            throw new IllegalArgumentException("La prestation ajoutée ne peut pas être nulle.");
+        }
+        if (prestations.contains(prestation)) {
+            throw new IllegalArgumentException("Cette prestation est déjà ajoutée.");
+        }
         prestations.add(prestation);
     }
 
@@ -196,6 +156,9 @@ public class Reservation implements Comparable<Reservation> {
      * @return {@code true} si les créneaux se chevauchent, {@code false} sinon
      */
     public boolean isOverlay(TimeSlot timeSlot) {
+        if (timeSlot == null) {
+            throw new IllegalArgumentException("Le créneau horaire fourni ne peut pas être nul.");
+        }
         return this.timeSlot.isOverlay(timeSlot);
     }
 
@@ -206,7 +169,7 @@ public class Reservation implements Comparable<Reservation> {
      * @return {@code true} si la réservation a lieu à cette date, {@code false} sinon
      */
     public boolean isDate(LocalDate date) {
-        return date.equals(this.timeSlot.getDay());
+        return date != null && date.equals(this.timeSlot.getDay());
     }
 
     /**
@@ -216,7 +179,7 @@ public class Reservation implements Comparable<Reservation> {
      * @return {@code true} si l'heure est incluse, {@code false} sinon
      */
     public boolean isInTimeSlot(LocalTime time) {
-        return timeSlot.isInTimeSlot(time);
+        return time != null && timeSlot.isInTimeSlot(time);
     }
 
     /**
@@ -225,14 +188,15 @@ public class Reservation implements Comparable<Reservation> {
      * @return une chaîne contenant la description des prestations
      */
     public String prestationsToString() {
+        if (prestations.isEmpty()) {
+            return "Aucun service prévu.";
+        }
         StringBuilder result = new StringBuilder("Services prévus : ");
         for (Prestation p : prestations) {
-            result.append(p.getDescription()).append(", ");
+            result.append(p.description()).append(", ");
         }
-        return result.toString();
+        return result.substring(0, result.length() - 2); // Supprime la virgule et l'espace finaux
     }
-
-    // Méthodes redéfinies
 
     /**
      * Retourne une représentation textuelle de la réservation.
@@ -267,7 +231,7 @@ public class Reservation implements Comparable<Reservation> {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(roomId, personId, date, timeSlot);
+        return Objects.hash(roomId, timeSlot);
     }
 
     /**
@@ -278,10 +242,11 @@ public class Reservation implements Comparable<Reservation> {
      */
     @Override
     public int compareTo(Reservation r2) {
-        int startComparison = getTimeSlot().getStartTime().compareTo(r2.getTimeSlot().getStartTime())
-                + getRoomId().id().compareTo(r2.getRoomId().id());
+        if (r2 == null) {
+            throw new IllegalArgumentException("Impossible de comparer avec une réservation nulle.");
+        }
+        int startComparison = getTimeSlot().getStartTime().compareTo(r2.getTimeSlot().getStartTime());
         if (startComparison != 0) {return startComparison;}
-        return getTimeSlot().getEndTime().compareTo(r2.getTimeSlot().getEndTime());
+        return getRoomId().id().compareTo(r2.getRoomId().id());
     }
 }
-

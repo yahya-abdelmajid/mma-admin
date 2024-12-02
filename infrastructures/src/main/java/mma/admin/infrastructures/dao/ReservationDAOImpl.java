@@ -10,29 +10,9 @@ import java.util.List;
 
 public class ReservationDAOImpl implements Dao<Reservation> {
 
-    private Connection connection;
+    private final Connection connection;
     public ReservationDAOImpl(Connection connection) {
         this.connection = connection;
-    }
-
-    @Override
-    public Reservation findById(String id) {
-        String query = "SELECT * FROM user WHERE badge = ?";
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1,id);
-            ResultSet resultSet = statement.executeQuery();
-
-            return new Reservation(resultSet.getInt("id"),
-                    resultSet.getString("room_id"),
-                    resultSet.getString("person_id"),
-                    resultSet.getTimestamp("created_date").toLocalDateTime(),
-                    new TimeSlot(resultSet.getTimestamp("start_time").toLocalDateTime(),
-                            resultSet.getTimestamp("end_time").toLocalDateTime()),
-                    resultSet.getString("description")
-            );
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
@@ -40,19 +20,23 @@ public class ReservationDAOImpl implements Dao<Reservation> {
         String query = "SELECT * FROM reservation";
         List<Reservation> reservations = new ArrayList<>();
 
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            ResultSet resultSet = statement.executeQuery();
-            while(resultSet.next()) {
-                reservations.add(new Reservation(resultSet.getInt("id"),
+        try (PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) { // Inclure ResultSet dans le try-with-resources
+
+            while (resultSet.next()) {
+                reservations.add(new Reservation(
+                        resultSet.getInt("id"),
                         resultSet.getString("room_id"),
                         resultSet.getString("person_id"),
-                        resultSet.getTimestamp("created_date").toLocalDateTime(),
-                        new TimeSlot(resultSet.getTimestamp("start_time").toLocalDateTime(),
-                                resultSet.getTimestamp("end_time").toLocalDateTime()),
-                        resultSet.getString("description"))
-                );
+                        new TimeSlot(
+                                resultSet.getTimestamp("start_time").toLocalDateTime(),
+                                resultSet.getTimestamp("end_time").toLocalDateTime()
+                        ),
+                        resultSet.getString("description"),
+                        resultSet.getInt("expected_person")
+                ));
             }
-        return reservations;
+            return reservations;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -62,7 +46,7 @@ public class ReservationDAOImpl implements Dao<Reservation> {
 
     @Override
     public void insert(Reservation object) {
-        String query = "INSERT INTO reservation (id,room_id, person_id, created_date, start_time, end_time, description) " +
+        String query = "INSERT INTO reservation (id,room_id, person_id, start_time, end_time, description,expected_person) " +
                 "VALUES (?,?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
@@ -70,16 +54,12 @@ public class ReservationDAOImpl implements Dao<Reservation> {
             statement.setInt(1, object.getId());
             statement.setString(2, object.getRoomId().id());           // ID de la salle
             statement.setString(3, object.getPersonId());      // ID de la personne
-            statement.setDate(4, Date.valueOf(object.getDate().toLocalDate())); // Date de réservation (LocalDate -> java.sql.Date)
-            statement.setTimestamp(5, Timestamp.valueOf(object.getTimeSlot().getStartTime())); // Début (LocalDateTime -> Timestamp)
-            statement.setTimestamp(6, Timestamp.valueOf(object.getTimeSlot().getEndTime()));   // Fin (LocalDateTime -> Timestamp)
-            statement.setString(7, object.getDescription());   // Description
-
+            statement.setTimestamp(4, Timestamp.valueOf(object.getTimeSlot().getStartTime())); // Début (LocalDateTime -> Timestamp)
+            statement.setTimestamp(5, Timestamp.valueOf(object.getTimeSlot().getEndTime()));   // Fin (LocalDateTime -> Timestamp)
+            statement.setString(6, object.getDescription());   // Description
+            statement.setInt(7, object.getExpectedPerson());
             // Exécuter la requête d'insertion
-            int rowsInserted = statement.executeUpdate();
-            if (rowsInserted > 0) {
-                System.out.println("Reservation successfully inserted!");
-            }
+            statement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Error inserting reservation", e);
         }

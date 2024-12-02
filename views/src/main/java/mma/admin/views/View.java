@@ -3,10 +3,8 @@
  */
 package mma.admin.views;
 
-import IMainView.IView;
+import mma.admin.presentations.IView;
 import mma.admin.presentations.Presenter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;

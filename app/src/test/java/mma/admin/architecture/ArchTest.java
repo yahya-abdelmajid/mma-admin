@@ -22,7 +22,7 @@ public class ArchTest {
     void should_respects_architecture() {
         var archRule = layeredArchitecture()
                 .consideringAllDependencies()
-                .layer("App").definedBy(globalPackageName + ".app")
+                .layer("App").definedBy(globalPackageName + ".app..")
                 .layer("Presentations").definedBy(globalPackageName + ".presentations..")
                 .layer("Views").definedBy(globalPackageName + ".views..")
                 .layer("Domains").definedBy(globalPackageName + ".domains..")
@@ -42,6 +42,8 @@ public class ArchTest {
                 .resideInAPackage("..domains..")
                 .should().onlyDependOnClassesThat().resideInAnyPackage("java..",
                         "org.apache.logging.log4j..",
+                        "org.aspectj.lang..",
+                        "org.aspectj.runtime..",
                         globalPackageName + ".domains..");
 
         domainRule.check(new ClassFileImporter().importPackages(globalPackageName + ".."));
@@ -51,10 +53,13 @@ public class ArchTest {
     void infrastructures_should_depend_on_domains() {
         var presentationRule = classes().that()
                 .resideInAPackage("..infrastructures..")
-                .should().onlyDependOnClassesThat()
+                .should().dependOnClassesThat().haveNameMatching("org.aspectj.lang.JoinPoint.*")
+                .orShould().onlyDependOnClassesThat()
                 .resideInAnyPackage("java..",
                         "org.apache.logging.log4j..",
                         "net.fortuna.ical4j..",
+                        "org.mapstruct..",
+                        "org.aspectj.runtime..",
                         globalPackageName + ".infrastructures..",
                         globalPackageName + ".domains..");
 
@@ -65,9 +70,12 @@ public class ArchTest {
     void presentations_should_on_domains() {
         var presentationRule = classes().that()
                 .resideInAPackage("..presentations..")
-                .should().onlyDependOnClassesThat().resideInAnyPackage(
+                .should().dependOnClassesThat().haveNameMatching("org.aspectj.lang.JoinPoint.*")
+                .orShould().onlyDependOnClassesThat().resideInAnyPackage(
                         "java..",
                         "org.apache.logging.log4j..",
+                        "org.aspectj.lang.JoinPoint",
+                        "org.aspectj.runtime..",
                         globalPackageName + ".presentations..",
                         globalPackageName + ".domains..");
 
@@ -87,5 +95,5 @@ public class ArchTest {
 
         presentationRule.check(new ClassFileImporter().importPackages(globalPackageName + ".."));
     }
-    
+
 }

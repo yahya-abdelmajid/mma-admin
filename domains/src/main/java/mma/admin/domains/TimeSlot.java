@@ -18,11 +18,15 @@ public class TimeSlot implements Comparable<TimeSlot> {
     /**
      * Constructeur pour initialiser un créneau horaire avec une date, une heure de début et une heure de fin.
      *
-     * @param day   Le jour du créneau horaire.
-     * @param start L'heure de début.
-     * @param end   L'heure de fin.
+     * @param day   Le jour du créneau horaire. Ne doit pas être null.
+     * @param start L'heure de début. Ne doit pas être null.
+     * @param end   L'heure de fin. Ne doit pas être null.
+     * @throws NullPointerException si l'un des paramètres est null.
      */
     public TimeSlot(LocalDate day, LocalTime start, LocalTime end) {
+        if (day == null || start == null || end == null) {
+            throw new NullPointerException("Les paramètres day, start et end ne doivent pas être null.");
+        }
         this.day = day;
         this.start = start;
         this.end = end;
@@ -33,10 +37,14 @@ public class TimeSlot implements Comparable<TimeSlot> {
     /**
      * Constructeur pour initialiser un créneau horaire avec des instants de début et de fin.
      *
-     * @param start L'instant de début (date et heure).
-     * @param end   L'instant de fin (date et heure).
+     * @param start L'instant de début (date et heure). Ne doit pas être null.
+     * @param end   L'instant de fin (date et heure). Ne doit pas être null.
+     * @throws NullPointerException si l'un des paramètres est null.
      */
     public TimeSlot(LocalDateTime start, LocalDateTime end) {
+        if (start == null || end == null) {
+            throw new NullPointerException("Les paramètres start et end ne doivent pas être null.");
+        }
         this.startTime = start;
         this.endTime = end;
         this.day = start.toLocalDate();
@@ -47,17 +55,22 @@ public class TimeSlot implements Comparable<TimeSlot> {
     /**
      * Constructeur pour initialiser un créneau horaire avec l'heure de début et de fin pour le jour actuel.
      *
-     * @param start L'heure de début.
-     * @param end   L'heure de fin.
+     * @param start L'heure de début. Ne doit pas être null.
+     * @param end   L'heure de fin. Ne doit pas être null.
+     * @throws NullPointerException si l'un des paramètres est null.
      */
     public TimeSlot(LocalTime start, LocalTime end) {
+        if (start == null || end == null) {
+            throw new NullPointerException("Les paramètres start et end ne doivent pas être null.");
+        }
         this.start = start;
         this.end = end;
         this.day = LocalDate.now();
         this.startTime = LocalDateTime.of(day, start);
         this.endTime = LocalDateTime.of(day, end);
-      }
+    }
 
+    // Méthodes existantes avec commentaires des exceptions ajoutés.
     /**
      * Obtient l'heure de début du créneau.
      *
@@ -119,7 +132,9 @@ public class TimeSlot implements Comparable<TimeSlot> {
      * @return {@code true} si le créneau est dans les heures de travail, {@code false} sinon.
      */
     public boolean isWithinWorkingHours(TimeSlot slot) {
-
+        if (slot==null) {
+            throw new NullPointerException("Le creneau horaire ne peut pas être null.");
+        }
         return (this.start.isAfter(slot.getStart()) ||this.start.equals(slot.getStart()))
                 && this.end.isBefore(slot.getEnd()) || this.end.equals(slot.getEnd());
     }
@@ -131,16 +146,21 @@ public class TimeSlot implements Comparable<TimeSlot> {
      * @return {@code true} si les créneaux se chevauchent, {@code false} sinon.
      */
     public boolean isOverlay(TimeSlot ts) {
+        if (ts==null) {
+            throw new NullPointerException("Le creneau horaire ne peut pas être null.");
+        }
         return this.start.isBefore(ts.getEnd()) && ts.getStart().isBefore(this.end);
     }
 
     /**
      * Vérifie si une heure donnée est incluse dans le créneau horaire.
-     *
      * @param time L'heure à vérifier.
      * @return {@code true} si l'heure est incluse, {@code false} sinon.
      */
     public boolean isInTimeSlot(LocalTime time) {
+        if (time==null) {
+            throw new NullPointerException("Le time ne peut pas être null.");
+        }
         return (this.start.isBefore(time) && time.isBefore(this.end))||
                 this.start.equals(time) || time.equals(this.end);
     }
@@ -175,13 +195,12 @@ public class TimeSlot implements Comparable<TimeSlot> {
 
     /**
      * Génère le code de hachage du créneau horaire.
-     *
      * @return Le code de hachage.
      */
-    @Override
-    public int hashCode() {
-        return start.hashCode() + end.hashCode();
-    }
+//    @Override
+//    public int hashCode() {
+//        return start.hashCode() + end.hashCode();
+//    }
 
     /**
      * Compare deux créneaux horaires selon leur heure de début et de fin.

@@ -3,7 +3,6 @@
  */
 package mma.admin.presentations;
 
-import IMainView.IView;
 import mma.admin.domains.*;
 import mma.admin.domains.interfaces.repository.CalendarsRepository;
 import mma.admin.domains.interfaces.repository.RoomsRepository;
@@ -20,12 +19,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Presenter {
-    CalendarsRepository calendarsRep;
-    UsersRepository usersRep;
-    RoomsRepository roomsRep;
+    private final CalendarsRepository calendarsRep;
+    private final UsersRepository usersRep;
+    private final RoomsRepository roomsRep;
     private final TimeSlot workingHours;
     private final LocalTime[] workingTimes;
-    private IView view;
+    private final IView view;
 
     public Presenter(IView view, CalendarsRepository calendarsRep, UsersRepository usersRep, RoomsRepository roomsRep) {
         view.setPresenter(this);
@@ -39,26 +38,32 @@ public class Presenter {
 
     public void addReservation(String roomId, String matricule,LocalDateTime start,LocalDateTime end,String description,int expected,String services) throws IOException, ParseException, SQLException {
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        LocalDateTime d = LocalDateTime.parse(LocalDateTime.now().format(formatter), formatter);
         TimeSlot timeSlot=new TimeSlot(start,end);
-        Reservation reservation=new Reservation(calendarsRep.getNbrReservations()+1,roomId,matricule,LocalDateTime.now(),timeSlot,description);
+        Reservation reservation=new Reservation(calendarsRep.getNbrReservations()+1,roomId,matricule,timeSlot,description,expected);
 
-        User user= usersRep.getUser(matricule);
-        //Vérifie que le matricule et que la room existe
-        if(usersRep.exists(matricule)&& roomsRep.exists(roomId)
-                //Vérifie que la capacité de la room est suffisante
-                && roomsRep.capacityRoomIsNotExceeded(roomId,expected)){
-            view.displayMessage("La réservation existe déjà");
-
-            //Vérifie que la réservation n'existe pas et le créneau horaire se trouve dans les heures d'ouverture
-            if(!calendarsRep.exists(reservation)&&timeSlot.isWithinWorkingHours(workingHours)&&
-                    //Vérifie que le créneau horaire ne commence pas dans le passé
-                timeSlot.isNotInPast()){
-                if(!services.isEmpty()) reservation.setPrestations(calendarsRep.getPrestations(services));
-                calendarsRep.addReservation(reservation);
-            }
+        if (isReservationValid(roomId, matricule, expected, timeSlot, reservation)) {
+            //Permet d'ajouter les services à une réservation
+            addPrestation(reservation,services);
+            calendarsRep.addReservation(reservation);
         }
+    }
+
+    private void addPrestation(Reservation reservation,String services){
+        if(!services.isEmpty()){
+            return;
+        }
+        for(Prestation p :calendarsRep.getPrestations(services)){
+            reservation.addPrestation(p);
+        }
+    }
+
+    private boolean isReservationValid(String roomId, String matricule, int expected, TimeSlot timeSlot, Reservation reservation) throws SQLException {
+        return usersRep.exists(matricule) &&
+                roomsRep.exists(roomId) &&
+                roomsRep.capacityRoomIsNotExceeded(roomId, expected) &&
+                !calendarsRep.exists(reservation) &&
+                timeSlot.isWithinWorkingHours(workingHours) &&
+                timeSlot.isNotInPast();
     }
 
     public void displayHeader(DateTimeFormatter formatter) {
@@ -71,7 +76,7 @@ public class Presenter {
         view.displayMessage(header.toString());
     }
 
-    public LocalTime[] createHeader() {
+    private LocalTime[] createHeader() {
 
         LocalTime time = workingHours.getStart();
         List<LocalTime> header = new ArrayList<>();
@@ -96,23 +101,20 @@ public class Presenter {
         // Génération des créneaux horaires (08h00 - 16h30) généré par une IA
         LocalTime[] timeTab=createHeader();
         char signe = '❌';
-        Collection<Agenda> agendas= calendarsRep.getAgendas();
-        for(Agenda agenda: agendas){
+        Map<RoomId,Agenda> agendas= calendarsRep.getCalendars();
+        for(Agenda agenda: agendas.values()){
             view.displayMessage(agenda.getLigneMenu(timeTab,date,signe+""));
         }
     }
 
     public void displayReservationIfExist(String roomId,LocalDateTime s,LocalDateTime e) {
         TimeSlot timeSlot=new TimeSlot(s,e);
-        Reservation result;
 
-        if(!roomsRep.exists(roomId)){
-            view.displayMessage("La salle n'existe pas");
-        }else if(!timeSlot.isWithinWorkingHours(workingHours)){
-            view.displayMessage("Le créneau horaire est en dehors des heures d'ouverture!");
+        if (!validateRoomAndTimeSlot(roomId, timeSlot)) {
+            return;
         }
 
-        result= calendarsRep.getReservation(roomId,timeSlot);
+        Reservation result= calendarsRep.getReservation(roomId,timeSlot);
         Room room=roomsRep.getRoom(new RoomId(roomId));
         User user=usersRep.getUser(result.getPersonId());
 
@@ -121,6 +123,18 @@ public class Presenter {
         }else{
             view.displayMessage(room+""+result+user+result.prestationsToString());
         }
+    }
+
+    private boolean validateRoomAndTimeSlot(String roomId, TimeSlot timeSlot) {
+        if (!roomsRep.exists(roomId)) {
+            view.displayMessage("La salle n'existe pas");
+            return false;
+        }
+        if (!timeSlot.isWithinWorkingHours(workingHours)) {
+            view.displayMessage("Le créneau horaire est en dehors des heures d'ouverture!");
+            return false;
+        }
+        return true;
     }
 
 

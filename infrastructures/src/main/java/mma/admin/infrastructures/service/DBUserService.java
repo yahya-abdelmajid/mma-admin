@@ -2,20 +2,18 @@ package mma.admin.infrastructures.service;
 
 import mma.admin.domains.User;
 import mma.admin.domains.interfaces.DataStorage;
+import mma.admin.domains.interfaces.service.UserService;
 
 import java.util.List;
 
-public class UserService {
+public class DBUserService implements UserService {
     private final DataStorage dataStorage;
 
-    public UserService(DataStorage dataStorage) {
+    public DBUserService(DataStorage dataStorage) {
         this.dataStorage=dataStorage;
     }
 
-    public User getUser(String id) {
-        return dataStorage.getUserDao().findById(id);
-    }
-
+    @Override
     public List<User> getAllUsers() {
         return dataStorage.getUserDao().findAll();
     }
