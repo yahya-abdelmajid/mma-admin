@@ -28,7 +28,7 @@ public class UserDAOImpl implements ReaderDao<User> {
 
             while (resultSet.next()) {
                 users.add(new User(
-                        resultSet.getString("id"),
+                        resultSet.getString("badge"),
                         resultSet.getString("full_name"),
                         resultSet.getString("email")
                 ));

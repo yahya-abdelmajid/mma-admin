@@ -3,10 +3,7 @@ package mma.admin.domains;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.AbstractSet;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -113,7 +110,7 @@ public class Agenda {
      */
     public String getLigneMenu(LocalTime[] header, LocalDate date, String signe) {
         if (header == null || date == null || signe == null) {
-            throw new IllegalArgumentException("Les arguments ne peuvent pas être null");
+            throw new IllegalArgumentException("Les arguments ne peuvent pas etre null");
         }
         StringBuilder ligne = new StringBuilder(String.format("%-10s", room.getId()));
         List<Reservation> reservations = getReservationsByDate(date);
@@ -153,73 +150,47 @@ public class Agenda {
      * @param duration la durée minimale des disponibilités
      * @param capacity la capacité minimale requise
      */
-    public void searchAvailabilities(TimeSlot wh, LocalDate date,LocalDate currentDate, Duration duration, int capacity) {
+    public void searchAvailabilities(TimeSlot wh, LocalDate date, LocalDate currentDate, Duration duration, int capacity) {
+        validateSearchParams(wh, date, duration, capacity);
+
+        Set<Reservation> reservationsForDay = new TreeSet<>(getReservationsByDate(currentDate));
+
+        if (reservationsForDay.isEmpty()) {
+            addAvailability(date, new TimeSlot(currentDate, wh.getStart(), wh.getEnd()), capacity);
+        } else {
+            AvailabilityContext ctx = new AvailabilityContext(date, currentDate, duration, capacity, reservationsForDay);
+            AvailabilityCalculator calculator = new AvailabilityCalculator(room);
+            availabilities.addAll(calculator.calculate(wh, ctx));
+        }
+    }
+
+    private void validateSearchParams(TimeSlot wh, LocalDate date, Duration duration, int capacity) {
         if (wh == null || date == null || duration == null || capacity <= 0) {
             throw new IllegalArgumentException("Les arguments sont invalides");
         }
-
-        Set<Reservation> reservations = new TreeSet<>(getReservationsByDate(date));
-
-        if (reservations.isEmpty()) {
-            addAvailability(date,new TimeSlot(currentDate, wh.getStart(), wh.getEnd()), capacity, duration);
-        } else {
-            calculateAvailabilities(date,currentDate, wh, duration, capacity, reservations);
-        }
     }
 
-    /**
-     * Calcule les disponibilités à partir des réservations existantes.
-     *
-     * @param date         la date des disponibilités
-     * @param wh           la plage horaire à examiner
-     * @param duration     la durée minimale des disponibilités
-     * @param capacity     la capacité minimale requise
-     * @param reservations les réservations existantes
-     */
-    private void calculateAvailabilities(LocalDate date,LocalDate currentDate, TimeSlot wh, Duration duration, int capacity, Set<Reservation> reservations) {
-        LocalTime start = wh.getStart();
-        LocalTime end = wh.getEnd();
-        LocalTime temp = start;
-        Duration range = Duration.ZERO;
-        //Début de l'algorithme
-        while (!temp.isAfter(end)) {
-            //Tant que temp n'est pas arrivé à l'heure de fermeture la boucle de fin
-            TimeSlot timeSlot = new TimeSlot(start, temp.plusMinutes(1));
-            range = range.plusMinutes(30);
-            temp = start.plus(range);
-
-            for (Reservation r : reservations) {
-                boolean isOverlay = r.isOverlay(timeSlot);
-                //Si le créneau horaire survolé
-                if ((isOverlay || temp.isAfter(end)) && range.compareTo(duration) >= 0) {
-                    addAvailability(date,new TimeSlot(currentDate, start, temp.minusMinutes(30)), capacity, duration);
-                    range = Duration.ZERO;
-                    break;
-                } else if (isOverlay) {
-                    start = r.getTimeSlot().getEnd();
-                    range = Duration.ZERO;
-                    temp = start;
-                    break;
-                }
-            }
-        }
-    }
 
     /**
      * Ajoute une disponibilité à l'ensemble des disponibilités.
      *
      * @param timeSlot la plage horaire de la disponibilité
      * @param capacity la capacité minimale requise
-     * @param duration la durée de la disponibilité
      */
-    private void addAvailability(LocalDate date,TimeSlot timeSlot, int capacity, Duration duration) {
-        if (timeSlot == null) {
-            throw new IllegalArgumentException("TimeSlot ne peut pas être null");
-        }
-
+    private void addAvailability(LocalDate date, TimeSlot timeSlot, int capacity) {
         Availability availability = new Availability(room.roomId(), timeSlot);
-        availability.calculatorScore(date,timeSlot.getDay(), room, duration, capacity);
+        availability.calculatorScore(date, timeSlot.getDay(), room, capacity);
         availabilities.add(availability);
+    }
+
+    public List<Reservation> getReservations(LocalDate startDate, LocalDate endDate) {
+        List<Reservation> reservations = new ArrayList<>();
+        for (Reservation reservation : this.reservations) {
+            if (reservation.isBeetweenDate(startDate, endDate)) {
+                reservations.add(reservation);
+            }
+        }
+        return reservations;
     }
 }
 

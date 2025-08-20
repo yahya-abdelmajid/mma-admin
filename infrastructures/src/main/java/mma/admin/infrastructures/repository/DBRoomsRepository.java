@@ -1,5 +1,6 @@
 package mma.admin.infrastructures.repository;
 
+import mma.admin.domains.Reservation;
 import mma.admin.domains.Room;
 import mma.admin.domains.RoomId;
 import mma.admin.domains.interfaces.repository.RoomsRepository;
@@ -26,6 +27,15 @@ public class DBRoomsRepository implements RoomsRepository {
     @Override
     public boolean exists(String id){
         return rooms.stream().anyMatch(room -> room.getId().equals(id));
+    }
+    @Override
+    public boolean allRoomsExist(List<Reservation> reservations){
+        for(Reservation reservation : reservations){
+            if(!exists(reservation.getRoomId().id())){
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

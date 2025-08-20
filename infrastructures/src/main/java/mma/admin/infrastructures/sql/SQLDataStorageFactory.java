@@ -26,9 +26,9 @@ public class SQLDataStorageFactory {
         try{
             Connection connection= DriverManager.getConnection(connectionString);
             if (connection != null) {
-                logger.info("La connexion est réussie !");
+                logger.info("La connexion est reussie !");
             } else {
-                logger.error("Échec de la connexion.");
+                logger.error("Echec de la connexion.");
             }
             return new SQLDataStorage(connection);
         }catch(SQLException e){

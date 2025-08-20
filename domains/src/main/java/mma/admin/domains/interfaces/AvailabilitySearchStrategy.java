@@ -6,8 +6,9 @@ import mma.admin.domains.TimeSlot;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.temporal.TemporalAmount;
 import java.util.List;
 
 public interface AvailabilitySearchStrategy {
-    List<Availability> searchAvailabilities(Agenda agenda, TimeSlot workingHours, LocalDate date, Duration duration, int roomCapacity) ;
+    List<Availability> searchAvailabilities(Agenda agenda, TimeSlot workingHours, LocalDate date, TemporalAmount duration, int roomCapacity) ;
 }

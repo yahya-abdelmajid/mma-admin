@@ -82,7 +82,6 @@ public class TimeSlot implements Comparable<TimeSlot> {
 
     /**
      * Obtient l'heure de fin du créneau.
-     *
      * @return L'heure de fin.
      */
     public LocalTime getEnd() {
@@ -91,7 +90,6 @@ public class TimeSlot implements Comparable<TimeSlot> {
 
     /**
      * Obtient le jour du créneau.
-     *
      * @return La date du créneau.
      */
     public LocalDate getDay() {
@@ -100,7 +98,6 @@ public class TimeSlot implements Comparable<TimeSlot> {
 
     /**
      * Obtient l'instant de début du créneau.
-     *
      * @return L'instant de début (date et heure).
      */
     public LocalDateTime getStartTime() {
@@ -109,7 +106,6 @@ public class TimeSlot implements Comparable<TimeSlot> {
 
     /**
      * Obtient l'instant de fin du créneau.
-     *
      * @return L'instant de fin (date et heure).
      */
     public LocalDateTime getEndTime() {
@@ -145,7 +141,7 @@ public class TimeSlot implements Comparable<TimeSlot> {
      * @param ts Le créneau horaire à comparer.
      * @return {@code true} si les créneaux se chevauchent, {@code false} sinon.
      */
-    public boolean isOverlay(TimeSlot ts) {
+    boolean isOverlay(TimeSlot ts) {
         if (ts==null) {
             throw new NullPointerException("Le creneau horaire ne peut pas être null.");
         }
@@ -157,13 +153,26 @@ public class TimeSlot implements Comparable<TimeSlot> {
      * @param time L'heure à vérifier.
      * @return {@code true} si l'heure est incluse, {@code false} sinon.
      */
-    public boolean isInTimeSlot(LocalTime time) {
+    boolean isInTimeSlot(LocalTime time) {
         if (time==null) {
             throw new NullPointerException("Le time ne peut pas être null.");
         }
         return (this.start.isBefore(time) && time.isBefore(this.end))||
                 this.start.equals(time) || time.equals(this.end);
     }
+
+    boolean isBeetween(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            return false;
+        }
+        return (day.isAfter(startDate) || day.equals(startDate)) && (day.isBefore(endDate) || day.equals(endDate));
+    }
+
+    public boolean isAfter(LocalTime lt){
+        return (lt.isAfter(start) || start.equals(lt))&&lt.isBefore(end);
+    }
+
+
 
     /**
      * Représentation textuelle du créneau horaire.
@@ -204,7 +213,6 @@ public class TimeSlot implements Comparable<TimeSlot> {
 
     /**
      * Compare deux créneaux horaires selon leur heure de début et de fin.
-     *
      * @param ts Le créneau horaire à comparer.
      * @return Un entier négatif, zéro ou positif selon l'ordre relatif des créneaux.
      */

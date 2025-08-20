@@ -1,6 +1,6 @@
 package mma.admin.domains;
 
-import java.util.Objects;
+import mma.admin.domains.exceptions.NoPositiveCapacityException;
 
 /**
  * Modèle de la salle de réunion avec ses créneaux horaires disponibles.
@@ -22,7 +22,7 @@ public record Room(RoomId roomId, String name, int capacity) {
         if (roomId == null) {
             throw new IllegalArgumentException("L'id de la salle ne peut pas être null.");
         }
-        if (name == null || name.isBlank()||name.equals("")) {
+        if (name == null || name.isBlank()||"".equals(name)) {
             throw new IllegalArgumentException("Le nom ne peut pas être null ou vide.");
         }
         if (capacity <= 0) {
@@ -37,7 +37,7 @@ public record Room(RoomId roomId, String name, int capacity) {
      */
     public boolean isValid(int personExpected) {
         if (personExpected <= 0) {
-            throw new IllegalArgumentException("Le nombre de personnes attendues ne peut pas être négatif.");
+            throw new NoPositiveCapacityException("Le nombre de personnes attendues ne peut pas être négatif.");
         }
 
         return personExpected <= capacity&&personExpected >0;

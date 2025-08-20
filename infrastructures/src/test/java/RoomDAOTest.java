@@ -32,19 +32,8 @@ public class RoomDAOTest {
     @BeforeEach
     void setUp() throws SQLException {
        db = new DataBaseInitializer();
-        db.clearTable();
        db.createTable();
-
-        List<Room> rooms = List.of(
-                new Room(new RoomId("LC1"), "Learning Center 1", 20),
-                new Room(new RoomId("LC2"), "Learning Center 2", 20),
-                new Room(new RoomId("LB1"), "Learning Box 1", 5),
-                new Room(new RoomId("LB2"), "Learning Box 2", 5)
-        );
-
-        // Ajout des utilisateurs
-
-        db.addRoom(rooms);
+       db.addRoomExample();
 
         RoomService roomService= new DBRoomService(db.getSQLDataStorage());
         roomsRepository = new DBRoomsRepository(roomService);
@@ -52,8 +41,6 @@ public class RoomDAOTest {
 
     @Test
     void test_select_room() {
-        //SQLiteOperations.insertData("Charlie", 28);
-        // Ajouter des assertions pour vérifier les données.
 
         List<Room> rooms=roomsRepository.getRooms();
 
@@ -110,7 +97,7 @@ public class RoomDAOTest {
 
     @AfterEach
     void cleanup() throws SQLException {
-        db.clearTable();
+        //db.clearTable();
         db.connection.close();
     }
 }

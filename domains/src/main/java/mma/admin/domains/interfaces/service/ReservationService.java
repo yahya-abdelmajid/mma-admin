@@ -9,11 +9,9 @@ import java.util.List;
 
 public interface ReservationService {
 
-    void addReservation(Reservation reservation) throws SQLException;
+    void addReservationWithServices(Reservation reservation) throws SQLException;
 
     List<Reservation> getAllReservations();
-
-    void addReservationAndService(Reservation reservation) throws SQLException;
 
     List<ReservationPrestation> getAllReservationService();
 

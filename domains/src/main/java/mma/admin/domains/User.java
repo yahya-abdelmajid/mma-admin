@@ -36,7 +36,7 @@ public record User(String badge, String fullName, String email) {
      */
     @Override
     public String toString() {
-        return String.format("%s (%s, %s)", fullName, badge, email);
+        return String.format("Responsable : %s (%s, %s)\n", fullName, badge, email);
     }
 }
 

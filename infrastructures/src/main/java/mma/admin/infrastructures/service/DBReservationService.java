@@ -17,33 +17,24 @@ public class DBReservationService implements ReservationService {
     }
 
     @Override
-    public void addReservation(Reservation reservation) throws SQLException {
-        try{
+    public void addReservationWithServices(Reservation reservation) throws SQLException {
+        try {
             dataStorage.beginTransaction();
+
             dataStorage.getReservationDao().insert(reservation);
+            for (Prestation p : reservation.getPrestations()) {
+                dataStorage.getPrestationDao().insert(reservation.getId(), p.id());
+            }
+
             dataStorage.commitTransaction();
-        }catch (Exception e) {
+        } catch (Exception e) {
             dataStorage.rollbackTransaction();
-            e.printStackTrace();
+            throw e;
         }
     }
     @Override
     public List<Reservation> getAllReservations(){
         return dataStorage.getReservationDao().findAll();
-    }
-
-    @Override
-    public void addReservationAndService(Reservation reservation) throws SQLException {
-        try{
-            dataStorage.beginTransaction();
-            for(Prestation p: reservation.getPrestations()) {
-                dataStorage.getPrestationDao().insert(reservation.getId(), p.id());
-            }
-            dataStorage.commitTransaction();
-        }catch (Exception e) {
-            dataStorage.rollbackTransaction();
-            e.printStackTrace();
-        }
     }
 
     @Override

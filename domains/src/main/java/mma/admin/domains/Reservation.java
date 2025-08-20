@@ -1,5 +1,7 @@
 package mma.admin.domains;
 
+import mma.admin.domains.exceptions.NoPositiveCapacityException;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -15,36 +17,13 @@ import java.util.Objects;
  */
 public class Reservation implements Comparable<Reservation> {
 
-    /**
-     * Identifiant unique de la réservation.
-     */
+
     private final int id;
-
-    /**
-     * Identifiant de la salle associée à cette réservation.
-     */
     private final RoomId roomId;
-
-    /**
-     * Identifiant de la personne ayant effectué la réservation.
-     */
     private final String personId;
-
-    /**
-     * Créneau horaire (début et fin) de la réservation.
-     */
     private final TimeSlot timeSlot;
-
-    /**
-     * Description de la réservation.
-     */
     private final String description;
-
-    /**
-     * Liste des prestations associées à cette réservation.
-     */
     private final List<Prestation> prestations;
-
     private final int expectedPerson;
 
     /**
@@ -57,23 +36,13 @@ public class Reservation implements Comparable<Reservation> {
      * @param description une description de la réservation
      */
     public Reservation(int id, String roomId, String personId, TimeSlot timeSlot, String description,int expectedPerson) {
-        if (roomId == null || timeSlot == null) {
-            throw new IllegalArgumentException("L'identifiant de la salle et le créneau horaire ne peuvent pas être nuls.");
-        }
-        if (personId == null || personId.trim().isEmpty()) {
-            throw new IllegalArgumentException("L'identifiant de la personne ne peut pas être nul ou vide.");
-        }
-        if (description != null && description.length() > 500) {
-            throw new IllegalArgumentException("La description ne peut pas dépasser 500 caractères.");
-        }
-
         this.id = id;
-        this.roomId = new RoomId(roomId);
-        this.personId = personId;
-        this.description = description;
-        this.timeSlot = timeSlot;
+        this.roomId = new RoomId(requireNonBlank(roomId, "roomId"));
+        this.personId = requireNonBlank(personId, "personId");
+        this.timeSlot = java.util.Objects.requireNonNull(timeSlot, "timeSlot ne peut pas être nul.");
+        this.description = normalizeDescription(description,500);
+        this.expectedPerson = requirePositive(expectedPerson);
         this.prestations = new ArrayList<>();
-        this.expectedPerson = expectedPerson;
     }
 
     /**
@@ -155,7 +124,7 @@ public class Reservation implements Comparable<Reservation> {
      * @param timeSlot le créneau horaire à vérifier
      * @return {@code true} si les créneaux se chevauchent, {@code false} sinon
      */
-    public boolean isOverlay(TimeSlot timeSlot) {
+    boolean isOverlay(TimeSlot timeSlot) {
         if (timeSlot == null) {
             throw new IllegalArgumentException("Le créneau horaire fourni ne peut pas être nul.");
         }
@@ -178,7 +147,7 @@ public class Reservation implements Comparable<Reservation> {
      * @param time l'heure à vérifier
      * @return {@code true} si l'heure est incluse, {@code false} sinon
      */
-    public boolean isInTimeSlot(LocalTime time) {
+    boolean isInTimeSlot(LocalTime time) {
         return time != null && timeSlot.isInTimeSlot(time);
     }
 
@@ -224,6 +193,10 @@ public class Reservation implements Comparable<Reservation> {
                 Objects.equals(timeSlot, that.timeSlot);
     }
 
+    boolean isBeetweenDate(LocalDate startDate, LocalDate endDate) {
+        return timeSlot.isBeetween(startDate, endDate);
+    }
+
     /**
      * Retourne le code de hachage de la réservation.
      *
@@ -248,5 +221,27 @@ public class Reservation implements Comparable<Reservation> {
         int startComparison = getTimeSlot().getStartTime().compareTo(r2.getTimeSlot().getStartTime());
         if (startComparison != 0) {return startComparison;}
         return getRoomId().id().compareTo(r2.getRoomId().id());
+    }
+
+    private static String requireNonBlank(String value, String field) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(field + " ne peut pas être nul ou vide.");
+        }
+        return value;
+    }
+
+    private int requirePositive(int value) {
+        if (value <= 0) {
+            throw new NoPositiveCapacityException("La capacité doit être strictement positif.");
+        }
+        return value;
+    }
+
+    private static String normalizeDescription(String desc,int lengthMax) {
+        if (desc == null || desc.isBlank()){ return null;} // ou "" selon ton choix
+        if (desc.length() > lengthMax) {
+            throw new IllegalArgumentException("La description ne peut pas dépasser 500 caractères.");
+        }
+        return desc;
     }
 }

@@ -9,14 +9,15 @@ import joptsimple.OptionSet;
 import mma.admin.domains.Agenda;
 import mma.admin.domains.Room;
 import mma.admin.domains.RoomId;
+import mma.admin.domains.interfaces.AvailabilitySearchStrategy;
 import mma.admin.domains.interfaces.DataStorage;
 import mma.admin.domains.interfaces.repository.CalendarsRepository;
 import mma.admin.domains.interfaces.repository.RoomsRepository;
 import mma.admin.domains.interfaces.repository.UsersRepository;
-import mma.admin.domains.interfaces.service.PrestationService;
-import mma.admin.domains.interfaces.service.ReservationService;
-import mma.admin.domains.interfaces.service.RoomService;
-import mma.admin.domains.interfaces.service.UserService;
+import mma.admin.domains.interfaces.service.*;
+import mma.admin.infrastructures.ICSCalendarsExporter;
+import mma.admin.infrastructures.ICSCalendarsImporter;
+import mma.admin.infrastructures.SimpleAvailabilitySearch;
 import mma.admin.infrastructures.repository.DBCalendarsRepository;
 import mma.admin.infrastructures.repository.DBRoomsRepository;
 import mma.admin.infrastructures.repository.DBUsersRepository;
@@ -54,7 +55,7 @@ public class Program {
             user = (String) options.valueOf("user");
             pwd = (String) options.valueOf("pwd");
 
-            System.out.println("Connexion à la base de données avec les paramètres suivants :");
+            System.out.println("Connexion a la base de donnees avec les parametres suivants :");
             System.out.println("DB: " + db);
             System.out.println("Utilisateur: " + user);
             System.out.println("Mot de passe: " + pwd);
@@ -67,6 +68,8 @@ public class Program {
         //./gradlew run --args="--db=jdbc:mysql://192.168.132.200:13306 --user=Q240275 --pwd=0275"
 
         connection = String.format("%s/%s", db,user+"?user="+user+"&password="+pwd);
+        //String connection="jdbc:mysql://192.168.132.200:13306/Q240275?user=Q240275&password=0275";
+        //String connection="jdbc:sqlite:infrastructures/src/test/resources/DBSQlite.sqlite";
 
         System.out.println(connection);
         //pwd="0275";
@@ -89,12 +92,13 @@ public class Program {
         for (Room r : roomsRep.getRooms()) {
             calendars.put(r.roomId(),new Agenda(r));
         }
-
-        CalendarsRepository calRep = new DBCalendarsRepository(reservationsService, calendars);
-
+        AvailabilitySearchStrategy availabilitySearchStrategy = new SimpleAvailabilitySearch();
+        CalendarsRepository calRep = new DBCalendarsRepository(reservationsService, calendars,availabilitySearchStrategy);
+        CalendarsExporter calendarsExp=new ICSCalendarsExporter(userRep);
+        CalendarsImporter calImporter=new ICSCalendarsImporter(calRep);
         // userRep.readAllTransactions("C:\\Temp\\transaction.csv");
         View view = new View();
-        Presenter presenter = new Presenter(view,calRep, userRep, roomsRep);
+        Presenter presenter = new Presenter(view,calRep, userRep, roomsRep,calendarsExp,calImporter);
         //presenter.addReservations("LB1","E567890","2024-10-28","09:30","12:30","Kickoff trapèze",3);
 
         view.displayGrid(LocalDate.now());
@@ -105,11 +109,13 @@ public class Program {
 
         while (!quit) {
             System.out.println("\n--- Menu ---");
-            System.out.println("1. Changer la date à afficher (format yyyy-mm-dd)");
-            System.out.println("2. Ajouter une réservation");
-            System.out.println("3. Consulter une réservation");
+            System.out.println("1. Changer la date a afficher (format yyyy-mm-dd)");
+            System.out.println("2. Ajouter une reservation");
+            System.out.println("3. Consulter une reservation");
             System.out.println("4. Chercher une salle disponible");
-            System.out.println("5. Quitter");
+            System.out.println("5. Exporter l'occupation d'une salle");
+            System.out.println("6. Importer l'occupation d'une salle");
+            System.out.println("7. Quitter");
             System.out.print("Veuillez choisir une option : ");
 
             String choix = scanner.nextLine();
@@ -120,7 +126,6 @@ public class Program {
                     view.setDate(scanner);
                     break;
                 case "2":
-                    //les valeurs sont par défaut pour l'instant
                     view.addReservation(scanner);
                     break;
                 case "3":
@@ -130,12 +135,18 @@ public class Program {
                     view.searchAvailabilityRoom(scanner);
                     break;
                 case "5":
+                    view.exportRoomOccupation(scanner);
+                    break;
+                case "6":
+                    view.importRoomOccupation(scanner);
+                    break;
+                case "7":
                     System.out.println("Fermeture du programme...");
                     dataStorage.closeConnection();
                     quit = true;
                     break;
                 default:
-                    System.out.println("Choix non valide. Veuillez réessayer.");
+                    System.out.println("Choix non valide. Veuillez reessayer.");
                     break;
             }
 

@@ -52,7 +52,7 @@ public class AvailabilityTest {
             int capacity = 15;
 
             // Act
-            availability.calculatorScore(date,currentDate, room, duration, capacity);
+            availability.calculatorScore(date,currentDate, room, capacity);
             // Assert
             int expectedScore = 283;
             assertEquals(expectedScore, availability.getScore());
@@ -74,8 +74,8 @@ public class AvailabilityTest {
             Duration duration = Duration.ofHours(2);
             int capacity = 15;
 
-            availability1.calculatorScore(date,currentDate, room, duration, capacity);
-            availability2.calculatorScore(date,currentDate, room, duration, capacity - 5); // Lower capacity
+            availability1.calculatorScore(date,currentDate, room, capacity);
+            availability2.calculatorScore(date,currentDate, room, capacity - 5); // Lower capacity
             // Act
             int comparisonResult = availability1.compareTo(availability2);
 
@@ -99,8 +99,8 @@ public class AvailabilityTest {
             Duration duration = Duration.ofHours(2);
             int capacity = 15;
 
-            availability1.calculatorScore(date,currentDate, room, duration, capacity);
-            availability2.calculatorScore(date,currentDate, room, duration, capacity - 5); // Lower capacity
+            availability1.calculatorScore(date,currentDate, room, capacity);
+            availability2.calculatorScore(date,currentDate, room, capacity - 5); // Lower capacity
 
             // Act
             int comparisonResult = availability1.compare(availability1, availability2);

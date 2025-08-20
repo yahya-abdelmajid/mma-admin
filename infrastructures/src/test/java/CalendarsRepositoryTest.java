@@ -1,4 +1,5 @@
 import mma.admin.domains.*;
+import mma.admin.domains.interfaces.AvailabilitySearchStrategy;
 import mma.admin.domains.interfaces.repository.CalendarsRepository;
 import mma.admin.domains.interfaces.service.ReservationService;
 import mma.admin.infrastructures.SimpleAvailabilitySearch;
@@ -12,6 +13,7 @@ import org.mockito.Mock;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 
@@ -80,7 +82,8 @@ public class CalendarsRepositoryTest {
         }
 
         ReservationService reservationService= new DBReservationService(db.getSQLDataStorage());
-        calendarsRepository=new DBCalendarsRepository(reservationService,calendars);
+        AvailabilitySearchStrategy availabilitySearchStrategy = new SimpleAvailabilitySearch();
+        calendarsRepository=new DBCalendarsRepository(reservationService,calendars,availabilitySearchStrategy);
 
         TimeSlot timeSlot1 = new TimeSlot(LocalDate.of(2024,12,30) ,LocalTime.of(9, 0), LocalTime.of(10, 0));
         Reservation reservation1 = new Reservation(1, "LC1", "C345678", timeSlot1, "Nickoff",10);
@@ -156,10 +159,11 @@ public class CalendarsRepositoryTest {
     @Test
     void should_return_reservation_given_matching_room_and_timeslot_when_get_reservation_then_return_reservation() {
 
-        TimeSlot timeSlot1 = new TimeSlot(LocalDate.of(2024,12,30) ,LocalTime.of(9, 0), LocalTime.of(10, 0));
-        Reservation reservation = new Reservation(1, "LC1", "C345678", timeSlot1, "Nickoff",10);
+        LocalDateTime dateTime=LocalDateTime.of(2024,12,30,9,0,0);
+        TimeSlot timeSlot = new TimeSlot(LocalDate.of(2024,12,30), LocalTime.of(9, 0), LocalTime.of(10, 0));
+        Reservation reservation = new Reservation(1, "LC1", "C345678", timeSlot, "Nickoff",10);
 
-        Reservation result = calendarsRepository.getReservation("LC1", timeSlot1);
+        Reservation result = calendarsRepository.getReservation("LC1", dateTime);
 
         assertTrue(reservation.compareTo(result)==0);
     }
@@ -167,11 +171,9 @@ public class CalendarsRepositoryTest {
     @Test
     void should_return_null_given_no_matching_room_and_timeslot_when_get_reservation_then_return_null() {
         TimeSlot timeSlot2 = new TimeSlot(LocalDate.of(2024,10,25), LocalTime.of(12, 0), LocalTime.of(15, 0));
-
         Reservation reservation2 = new Reservation(2, "LC1", "B234567", timeSlot2, "Description",11);
 
-        Reservation result = calendarsRepository.getReservation("LC1",timeSlot2);
-
+        Reservation result = calendarsRepository.getReservation("LC1",timeSlot2.getStartTime());
         assertNull(result);
     }
 
@@ -190,19 +192,15 @@ public class CalendarsRepositoryTest {
         // Given
 
         TimeSlot timeSlot1 = new TimeSlot(LocalDate.of(2024,12,30) ,LocalTime.of(11, 0), LocalTime.of(17, 0));
-
-        Reservation reservation = new Reservation(1, "LC1", "A123456", timeSlot1, "Nickoff",10);
-
         TimeSlot workingHours=new TimeSlot(LocalTime.of(8, 0), LocalTime.of(17, 0));
-
 
         LocalDate date = LocalDate.of(2024,12,30);
         Duration duration = Duration.ofHours(6);
         int roomCapacity = 16;
 
-        List<Availability> availabilities=calendarsRepository.getAvailabilities(workingHours,date,duration,roomCapacity);
-        Collections.sort(availabilities);
-        Collections.reverse(availabilities);
+        List<Availability> availabilities = new ArrayList<>(calendarsRepository.getAvailabilities(workingHours,date,duration,roomCapacity));
+
+        availabilities.sort(Comparator.reverseOrder());
 
         // Then
         assertEquals(availabilities.get(0).toString(),new Availability(new RoomId("LC1"),timeSlot1).toString());

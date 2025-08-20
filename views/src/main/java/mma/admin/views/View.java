@@ -5,6 +5,7 @@ package mma.admin.views;
 
 import mma.admin.presentations.IView;
 import mma.admin.presentations.Presenter;
+import mma.admin.presentations.ReservationT;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -45,20 +46,23 @@ public class View implements IView {
     }
 
     public void addReservation(Scanner scanner) throws IOException, ParseException, SQLException {
-        displayMessage("Entrez un numéro de salle existant: ");
+        displayMessage("Entrez un numero de salle existant: ");
         String roomId = scanner.nextLine();
         displayMessage("Entrez un matricule: ");
         String badge = scanner.nextLine();
         displayMessage("Entrez une date au format yyyy-mm-dd (ex:2024-10-24): ");
         String dateReservation = scanner.nextLine();
-        displayMessage("Entrez l'heure de début au format hh:mm (ex: 09:00): ");
+        displayMessage("Entrez l'heure de debut au format hh:mm (ex: 09:00): ");
         String start = scanner.nextLine();
         displayMessage("Entrez l'heure de fin au format hh:mm (ex: 11:00): ");
         String end = scanner.nextLine();
         displayMessage("Entrez une description: ");
         String description = scanner.nextLine();
         displayMessage("Entrez le nombre de personne attendu");
-        int excepted=scanner.nextInt();
+
+        int excepted=Integer.parseInt(scanner.nextLine().trim());
+        //Parce que nextInt() laisse le retour chariot (\n) dans le buffer,
+        // ce qui fait que nextLine() lit une chaîne vide
         displayMessage("Voulez-vous ajouter des services (oui/non):");
         String boolService = scanner.nextLine();
 
@@ -66,41 +70,33 @@ public class View implements IView {
 
         if(boolService.equals("oui")) {
             displayMessage("----Services Disponible----");
-            displayMessage("1.Café et boissons:");
+            displayMessage("1.Cafe et boissons:");
             displayMessage("2.Nourriture:");
             displayMessage("3.Projecteur:");
             displayMessage("4.Matériel Sonore:");
             displayMessage("Choisissez un/des service(s) " +
-                    "en les séparent par une virgule (ex: 1,2");
+                    "en les separent par une virgule (ex: 1,2)");
             resultatService = scanner.nextLine();
         }
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        //LocalDateTime s = LocalDateTime.parse("2024-11-29"+" "+"09:00", formatter);
-        //LocalDateTime e = LocalDateTime.parse("2024-11-28"+" "+"10:30", formatter);
+
         LocalDateTime dateStart = LocalDateTime.parse(dateReservation+" "+start, formatter);
         LocalDateTime dateEnd = LocalDateTime.parse(dateReservation+" "+end, formatter);
-        presenter.addReservation(roomId,badge,dateStart,dateEnd,description,excepted,resultatService);
-
-        //presenter.addReservation("LC1","C345678",s,e,"Kickoff trapèze",3,"1,2");
+        presenter.addReservation(new ReservationT(roomId,badge,dateStart,dateEnd,description,excepted,resultatService));
     }
 
     public void displayReservation(Scanner scanner) throws IOException, ParseException {
-        displayMessage("Entrez un numéro de salle existant: ");
+        displayMessage("Entrez un numero de salle existant: ");
         String roomId = scanner.nextLine();
         displayMessage("Entrez une date au format yyyy-mm-dd (ex:2024-10-24): ");
         String dateReservation = scanner.nextLine();
-        displayMessage("Entrez l'heure de début au format hh:mm (ex: 09:00): ");
+        displayMessage("Entrez l'heure de debut au format hh:mm (ex: 09:00): ");
         String start = scanner.nextLine();
-        displayMessage("Entrez l'heure de fin au format hh:mm (ex: 11:00): ");
-        String end = scanner.nextLine();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         LocalDateTime dateStart = LocalDateTime.parse(dateReservation+" "+start, formatter);
-        LocalDateTime dateEnd = LocalDateTime.parse(dateReservation+" "+end, formatter);
-//        LocalDateTime dateStart = LocalDateTime.parse("2024-12-02"+" "+"09:00", formatter);
-//        LocalDateTime dateEnd = LocalDateTime.parse("2024-12-02"+" "+"10:00", formatter);
 
-        presenter.displayReservationIfExist(roomId,dateStart,dateEnd);
+        presenter.displayReservationIfExist(roomId,dateStart);
     }
 
     public void displayGrid(LocalDate date) {
@@ -109,14 +105,14 @@ public class View implements IView {
 
     public void searchAvailabilityRoom(Scanner scanner) {
 
-        displayMessage("Entrez le jour de la réservation (format AAAA-MM-JJ) : ");
+        displayMessage("Entrez le jour de la reservation (format AAAA-MM-JJ) : ");
         String day = scanner.nextLine();
 
-        displayMessage("Quelle est la durée de réservation (ex: 01:30 pour 1h30): ");
+        displayMessage("Quelle est la durée de reservation (ex: 01:30 pour 1h30): ");
         String duration = scanner.nextLine();
 
         displayMessage("Entrez le nombre de personne attendu");
-        int excepted=scanner.nextInt();
+        int excepted=Integer.parseInt(scanner.nextLine().trim());
 
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -124,7 +120,37 @@ public class View implements IView {
         Duration dur=Duration.between(LocalTime.MIN, durat);
         LocalDate date = LocalDate.parse(day, formatter);
 
-        presenter.displayRoomRequest(date,excepted,dur,5);
+        presenter.displayRoomRequest(date,excepted,dur,6);
+    }
+
+    public void exportRoomOccupation(Scanner scanner) throws IOException, ParseException {
+
+        displayMessage("Entrez l'identifiant de la salle: ");
+        String room = scanner.nextLine();
+
+        displayMessage("Entrez la date du début au format yyyy-mm-dd (ex:2024-10-24): ");
+        String dateReservationStart = scanner.nextLine();
+
+        displayMessage("Entrez la date de fin au format yyyy-mm-dd (ex:2024-10-24): ");
+        String dateReservationEnd = scanner.nextLine();
+
+        displayMessage("Entrez le chemin absolu du fichier ICS à créer");
+        String absolutePath = scanner.nextLine();
+
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate dateStart = LocalDate.parse(dateReservationStart, formatter);
+        LocalDate dateEnd = LocalDate.parse(dateReservationEnd, formatter);
+
+        presenter.exportReservationRoom(room,dateStart,dateEnd,absolutePath);
+    }
+
+    public void importRoomOccupation(Scanner scanner) throws IOException, ParseException, SQLException {
+
+        displayMessage("Entrez le chemin absolu du fichier ICS à importer");
+        String absolutePath = scanner.nextLine();
+
+        presenter.importReservations(absolutePath);
     }
 
 

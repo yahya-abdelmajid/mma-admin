@@ -4,23 +4,27 @@ import mma.admin.domains.*;
 import mma.admin.domains.interfaces.AvailabilitySearchStrategy;
 import mma.admin.domains.interfaces.repository.CalendarsRepository;
 import mma.admin.domains.interfaces.service.ReservationService;
-import mma.admin.infrastructures.SimpleAvailabilitySearch;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.TemporalAmount;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class DBCalendarsRepository implements CalendarsRepository {
     //private static final Logger LOGGER = LogManager.getLogger();
 
     private final ReservationService reservationsService;
     private final Map<RoomId, Agenda> calendars;
+    private final List<Prestation> prestations;
+    private final AvailabilitySearchStrategy availabilitySearchStrategy;
 
-    public DBCalendarsRepository(ReservationService reservationsService, Map<RoomId, Agenda> calendars) throws SQLException {
+    public DBCalendarsRepository(ReservationService reservationsService, Map<RoomId, Agenda> calendars,AvailabilitySearchStrategy availabilitySearchStrategy) throws SQLException {
         this.calendars = calendars;
         this.reservationsService = reservationsService;
-        //readAllReservations();
+        this.prestations = reservationsService.getAllPrestations();
+        this.availabilitySearchStrategy = availabilitySearchStrategy;
+        readAllReservations();
     }
 
     @Override
@@ -29,19 +33,20 @@ public class DBCalendarsRepository implements CalendarsRepository {
     }
 
     @Override
-    public List<Prestation> getPrestations(String services) {
-        if(!services.matches("^[1-4](,[1-4])*$")){
-            return Collections.emptyList();
-        }
-            String[] service = services.split(",");
-            List<Integer> servicesInt=Arrays.stream(service)
-                    .map(Integer::parseInt)
-                    .toList();
+    public Agenda getAgenda(RoomId roomId) {
+        return calendars.get(roomId);
+    }
 
-        List<Prestation> prestations=reservationsService.getAllPrestations();
-            return prestations.stream()
-                    .filter(prestation -> servicesInt.contains(prestation.id()))
-                    .collect(Collectors.toList());
+    @Override
+    public List<Prestation> getPrestations(String services) {
+        if (!services.matches("^[1-4](,[1-4])*$")) {
+            return List.of();
+        }
+
+        final String hay = "," + services + ",";
+        return prestations.stream()
+                .filter(p -> hay.contains("," + p.id() + ","))
+                .toList(); // immuable, OK si on ne tries/modifies pas ensuite
     }
 
     @Override
@@ -60,12 +65,24 @@ public class DBCalendarsRepository implements CalendarsRepository {
     }
 
     @Override
-    public Reservation getReservation(String roomId,TimeSlot timeSlot) {
+    public boolean allExists(List<Reservation> reservations) {
+        for(Reservation reservation : reservations){
+            if(!exists(reservation)){return false;}
+        }
+        return true;
+    }
+
+    @Override
+    public Reservation getReservation(String roomId, LocalDateTime dateTime) {
 
         for(Agenda agenda : calendars.values()) {
             for(Reservation r : agenda.getReservations()) {
+
+                TimeSlot ts = r.getTimeSlot();
+               // boolean isAfter=(ts.getStart().isAfter(start) || start.equals(lt))&&lt.isBefore(end);
                 if(r.getRoomId().id().equals(roomId)&&
-                r.getTimeSlot().compareTo(timeSlot)==0) {
+                ts.isAfter(dateTime.toLocalTime())&&
+                r.isDate(dateTime.toLocalDate())) {
                     return r;}
             }
         }
@@ -74,13 +91,20 @@ public class DBCalendarsRepository implements CalendarsRepository {
 
     @Override
     public void addReservation(Reservation reservation) throws SQLException {
-        reservationsService.addReservation(reservation);
-        reservationsService.addReservationAndService(reservation);
+        reservationsService.addReservationWithServices(reservation);
         calendars.get(reservation.getRoomId()).add(reservation);
     }
 
     @Override
-    public void readAllReservations(){
+    public void addAllReservation(List<Reservation> reservations) throws SQLException {
+        for(Reservation reservation : reservations){
+            reservationsService.addReservationWithServices(reservation);
+            calendars.get(reservation.getRoomId()).add(reservation);
+        }
+    }
+
+    @Override
+    public final void readAllReservations(){
 
         List<Reservation> reservations = reservationsService.getAllReservations();
         List<ReservationPrestation> reservationPrestations=reservationsService.getAllReservationService();
@@ -99,38 +123,14 @@ public class DBCalendarsRepository implements CalendarsRepository {
         }
     }
 
-//    @Override
-//    public List<Availability> getAvailabilities(TimeSlot workingHours ,LocalDate date, Duration duration, int roomCapacity) {
-//        List<Availability> availabilities = new ArrayList<>();
-//        LocalDate end = date.plusDays(2);
-//        LocalDate currentDate;
-//        for (Agenda agenda : calendars.values()) {
-//            if (agenda.getRoom().capacity() >= roomCapacity) {
-//                availabilitySearchStrategy.searchAvailabilities(agenda,workingHours,date,duration,roomCapacity);
-//                availabilities.addAll(agenda.getAvailabilities());
-//            }
-//        }
-//
-//        return availabilities;
-//    }
-
-    @Override
-    public List<Availability> getAvailabilities(TimeSlot workingHours, LocalDate date, Duration duration, int roomCapacity) {
-        AvailabilitySearchStrategy availabilitySearchStrategy= new SimpleAvailabilitySearch();
-
+    // utilisation
+    @Override public List<Availability> getAvailabilities(TimeSlot workingHours, LocalDate date, TemporalAmount duration, int roomCapacity) {
         return calendars.values().stream()
                 .filter(agenda -> agenda.getRoom().capacity() >= roomCapacity)
-                .flatMap(agenda -> availabilitySearchStrategy.searchAvailabilities(agenda, workingHours, date, duration, roomCapacity).stream())
-                .collect(Collectors.toList());
+                .flatMap(agenda -> availabilitySearchStrategy
+                        .searchAvailabilities(agenda, workingHours, date, duration, roomCapacity)
+                        .stream())
+                .toList();
     }
 
-
-
-//    @Override
-//    public List<Availability> getAvailabilities(TimeSlot workingHours, LocalDate date, Duration duration, int roomCapacity) {
-//        return calendars.values().stream()
-//                .filter(agenda -> agenda.getRoom().capacity() >= roomCapacity)
-//                .flatMap(agenda -> availabilitySearchStrategy.searchAvailabilities(agenda, workingHours, date, duration, roomCapacity).stream())
-//                .collect(Collectors.toList());
-//    }
 }

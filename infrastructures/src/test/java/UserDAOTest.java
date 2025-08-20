@@ -37,21 +37,7 @@ public class UserDAOTest {
        db.clearTable();
        db.createTable();
 
-        List<User> users = new ArrayList<>();
-
-        // Ajout des utilisateurs
-        users.add(new User("A123456", "Jean Dupont", "j.dupont@helmo.be"));
-        users.add(new User("B234567", "Marie Dubois", "m.dubois@helmo.be"));
-        users.add(new User("C345678", "Pierre Martin", "p.martin@helmo.be"));
-        users.add(new User("D456789", "Sophie Lambert", "s.lambert@helmo.be"));
-        users.add(new User("E567890", "Luc Lefevre", "l.lefevre@helmo.be"));
-        users.add(new User("F678901", "Claire Simon", "c.simon@helmo.be"));
-        users.add(new User("G789012", "Marc Durand", "m.durand@helmo.be"));
-        users.add(new User("H890123", "Julie Bernard", "j.bernard@helmo.be"));
-        users.add(new User("I901234", "Paul Richard", "p.richard@helmo.be"));
-        users.add(new User("J012345", "Emma Petit", "e.petit@helmo.be"));
-
-        db.addUser(users);
+        db.addUserExample();
 
         UserService userService=new DBUserService(db.getSQLDataStorage());
         usersRepository=new DBUsersRepository(userService);
@@ -62,9 +48,6 @@ public class UserDAOTest {
 
     @Test
     void test_select_user() {
-        //SQLiteOperations.insertData("Charlie", 28);
-        // Ajouter des assertions pour vérifier les données.
-
         List<User> users=usersRepository.getUsers();
         assertEquals(users.get(0), new User("A123456", "Jean Dupont", "j.dupont@helmo.be"));
     }
@@ -81,7 +64,7 @@ public class UserDAOTest {
         when(mockStatement.executeQuery()).thenReturn(mockResultSet);
         when(mockResultSet.next())
                 .thenReturn(true, true, false); // Deux lignes, puis fin
-        when(mockResultSet.getString("id"))
+        when(mockResultSet.getString("badge"))
                 .thenReturn("A123456", "B234567");
         when(mockResultSet.getString("full_name"))
                 .thenReturn("Jean Dupont", "Marie Dubois");
@@ -148,7 +131,7 @@ public class UserDAOTest {
         when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement);
         when(mockStatement.executeQuery()).thenReturn(mockResultSet);
         when(mockResultSet.next()).thenReturn(true, false); // Une seule ligne
-        when(mockResultSet.getString("id")).thenReturn("A123456"); // Colonne ID nulle
+        when(mockResultSet.getString("badge")).thenReturn("A123456"); // Colonne ID nulle
         when(mockResultSet.getString("full_name")).thenReturn("Jean Dupont");
         when(mockResultSet.getString("email")).thenReturn("j.dupont@helmo.be");
 
@@ -165,7 +148,7 @@ public class UserDAOTest {
 
     @AfterEach
     void cleanup() throws SQLException {
-        db.clearTable();
+        //db.clearTable();
         db.connection.close();
     }
 }

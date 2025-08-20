@@ -1,5 +1,6 @@
 package mma.admin.domains;
 
+import mma.admin.domains.exceptions.NoPositiveCapacityException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -7,184 +8,166 @@ import static org.junit.jupiter.api.Assertions.*;
 class RoomTest {
 
     @Test
-    void should_throw_exception_when_room_id_is_null() {
+    void givenNullRoomId_whenConstructingRoom_thenThrowsIllegalArgumentExceptionWithMessage() {
         // Arrange
-        String name = "Conference Room";
-        int capacity = 20;
-
-        // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> new Room(null, name, capacity));
-        assertEquals("L'id de la salle ne peut pas être null.", exception.getMessage());
-    }
-
-    @Test
-    void should_throw_exception_when_capacity_is_non_positive() {
-        // Arrange
-        RoomId roomId = new RoomId("Room1");
-        String name = "Conference Room";
-
-        // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> new Room(roomId, name, 0));
-        assertEquals("La capacité doit être un nombre positif.", exception.getMessage());
-    }
-
-    @Test
-    void should_throw_exception_when_name_is_null_or_blank() {
-        // Arrange
-        RoomId roomId = new RoomId("Room1");
-
-        // Act & Assert for null name
-        IllegalArgumentException exceptionNull = assertThrows(IllegalArgumentException.class,
-                () -> new Room(roomId, null, 20));
-        assertEquals("Le nom ne peut pas être null ou vide.", exceptionNull.getMessage());
-
-        // Act & Assert for blank name
-        IllegalArgumentException exceptionBlank = assertThrows(IllegalArgumentException.class,
-                () -> new Room(roomId, "   ", 20));
-        assertEquals("Le nom ne peut pas être null ou vide.", exceptionBlank.getMessage());
-    }
-
-    @Test
-    void should_return_correct_id_from_get_id() {
-        // Arrange
-        RoomId roomId = new RoomId("Room1");
-        Room room = new Room(roomId, "Conference Room", 20);
+        RoomId nullId = null;
 
         // Act
-        String id = room.getId();
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new Room(nullId, "Salle Alpha", 10));
 
         // Assert
-        assertEquals("Room1", id);
+        assertEquals("L'id de la salle ne peut pas être null.", ex.getMessage());
     }
 
     @Test
-    void should_return_correct_string_representation() {
+    void givenNullName_whenConstructingRoom_thenThrowsIllegalArgumentExceptionWithMessage() {
         // Arrange
-        RoomId roomId = new RoomId("Room1");
-        Room room = new Room(roomId, "Conference Room", 20);
+        RoomId id = new RoomId("LC1");
 
         // Act
-        String roomString = room.toString();
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new Room(id, null, 10));
 
         // Assert
-        assertEquals("Salle : Conference Room (Cap. 20)\n", roomString);
+        assertEquals("Le nom ne peut pas être null ou vide.", ex.getMessage());
     }
 
     @Test
-    void should_return_true_when_two_rooms_are_equal() {
+    void givenBlankOrEmptyName_whenConstructingRoom_thenThrowsIllegalArgumentExceptionWithMessage() {
         // Arrange
-        RoomId roomId = new RoomId("Room1");
-        Room room1 = new Room(roomId, "Conference Room", 20);
-        Room room2 = new Room(roomId, "Conference Room", 20);
+        RoomId id = new RoomId("LC1");
 
-        // Act & Assert
-        assertEquals(room1, room2);
+        // Act
+        IllegalArgumentException exBlank = assertThrows(IllegalArgumentException.class,
+                () -> new Room(id, "   ", 10));
+        IllegalArgumentException exEmpty = assertThrows(IllegalArgumentException.class,
+                () -> new Room(id, "", 10));
+
+        // Assert
+        assertEquals("Le nom ne peut pas être null ou vide.", exBlank.getMessage());
+        assertEquals("Le nom ne peut pas être null ou vide.", exEmpty.getMessage());
     }
 
     @Test
-    void should_return_false_when_two_rooms_have_different_ids_or_names() {
+    void givenNonPositiveCapacity_whenConstructingRoom_thenThrowsIllegalArgumentExceptionWithMessage() {
         // Arrange
-        RoomId roomId1 = new RoomId("Room1");
-        RoomId roomId2 = new RoomId("Room2");
-        Room room1 = new Room(roomId1, "Conference Room", 20);
-        Room room2 = new Room(roomId2, "Conference Room", 20);
-        Room room3 = new Room(roomId1, "Different Room", 20);
+        RoomId id = new RoomId("LC1");
 
-        // Act & Assert
-        assertNotEquals(room1, room2);
-        assertNotEquals(room1, room3);
+        // Act
+        IllegalArgumentException exZero = assertThrows(IllegalArgumentException.class,
+                () -> new Room(id, "Salle Alpha", 0));
+        IllegalArgumentException exNegative = assertThrows(IllegalArgumentException.class,
+                () -> new Room(id, "Salle Alpha", -5));
+
+        // Assert
+        assertEquals("La capacité doit être un nombre positif.", exZero.getMessage());
+        assertEquals("La capacité doit être un nombre positif.", exNegative.getMessage());
+    }
+
+    // ---------- Accesseurs record & getId & toString ----------
+
+    @Test
+    void givenValidArgs_whenConstructingRoom_thenAccessorsAndGetIdAndToStringAreCorrect() {
+        // Arrange
+        RoomId id = new RoomId("LB2");
+
+        // Act
+        Room room = new Room(id, "Salle Beta", 12);
+
+        // Assert
+        assertEquals(id, room.roomId());
+        assertEquals("Salle Beta", room.name());
+        assertEquals(12, room.capacity());
+        assertEquals("LB2", room.getId());
+        assertEquals("Salle : Salle Beta (Cap. 12)\n", room.toString());
+    }
+
+    // ---------- isValid (branches vrai/faux/exception + bornes) ----------
+
+    @Test
+    void givenExpectedPersonsWithinCapacity_whenIsValid_thenReturnsTrue() {
+        // Arrange
+        Room room = new Room(new RoomId("LC1"), "Salle Alpha", 10);
+
+        // Act
+        boolean ok1 = room.isValid(1);
+        boolean ok2 = room.isValid(10); // borne = capacité
+
+        // Assert
+        assertTrue(ok1);
+        assertTrue(ok2);
     }
 
     @Test
-    void should_return_same_hash_code_for_identical_rooms() {
+    void givenExpectedPersonsExceedingCapacity_whenIsValid_thenReturnsFalse() {
         // Arrange
-        RoomId roomId = new RoomId("Room1");
-        Room room1 = new Room(roomId, "Conference Room", 20);
-        Room room2 = new Room(roomId, "Conference Room", 20);
+        Room room = new Room(new RoomId("LC1"), "Salle Alpha", 10);
 
-        // Act & Assert
-        assertEquals(room1.hashCode(), room2.hashCode());
+        // Act
+        boolean result = room.isValid(11);
+
+        // Assert
+        assertFalse(result);
     }
 
     @Test
-    void should_return_different_hash_codes_for_different_rooms() {
+    void givenNonPositiveExpectedPersons_whenIsValid_thenThrowsNoPositiveCapacityExceptionWithMessage() {
         // Arrange
-        RoomId roomId1 = new RoomId("Room1");
-        RoomId roomId2 = new RoomId("Room2");
-        Room room1 = new Room(roomId1, "Conference Room", 20);
-        Room room2 = new Room(roomId2, "Conference Room", 20);
+        Room room = new Room(new RoomId("LC1"), "Salle Alpha", 10);
 
-        // Act & Assert
-        assertNotEquals(room1.hashCode(), room2.hashCode());
+        // Act
+        NoPositiveCapacityException exZero = assertThrows(NoPositiveCapacityException.class, () -> room.isValid(0));
+        NoPositiveCapacityException exNegative = assertThrows(NoPositiveCapacityException.class, () -> room.isValid(-3));
+
+        // Assert
+        assertEquals("Le nombre de personnes attendues ne peut pas être négatif.", exZero.getMessage());
+        assertEquals("Le nombre de personnes attendues ne peut pas être négatif.", exNegative.getMessage());
+    }
+
+    // ---------- equals / hashCode de record (comportement standard) ----------
+
+    @Test
+    void givenIdenticalRooms_whenEquals_thenTrueAndHashCodesMatch() {
+        // Arrange
+        Room a = new Room(new RoomId("LC1"), "Salle Alpha", 10);
+        Room b = new Room(new RoomId("LC1"), "Salle Alpha", 10);
+
+        // Act
+        boolean eq = a.equals(b);
+        int ha = a.hashCode();
+        int hb = b.hashCode();
+
+        // Assert
+        assertTrue(eq);
+        assertEquals(ha, hb);
     }
 
     @Test
-    void testIsValid_CapacityChecks() {
+    void givenDifferentRooms_whenEquals_thenFalseAndHashCodesLikelyDiffer() {
         // Arrange
-        RoomId roomId = new RoomId("Room1");
-        Room room = new Room(roomId, "Salle A", 20);
+        Room a = new Room(new RoomId("LC1"), "Salle Alpha", 10);
+        Room b = new Room(new RoomId("LC2"), "Salle Beta", 8);
 
-        // Act & Assert
-        assertTrue(room.isValid(10));   // Valid: within capacity
-        assertTrue(room.isValid(20));   // Valid: exactly at capacity
-        IllegalArgumentException exceptionNegative = assertThrows(IllegalArgumentException.class,
-                () -> room.isValid(-5)); // Invalid: negative persons
-        assertEquals("Le nombre de personnes attendues ne peut pas être négatif.", exceptionNegative.getMessage());
+        // Act
+        boolean eq = a.equals(b);
+
+        // Assert
+        assertFalse(eq);
+        // Pas d'obligation contractuelle que les hashCodes diffèrent, donc on n'assert pas ici
     }
 
     @Test
-    void testEqualsAndHashCode_DifferentCases() {
+    void givenRoom_whenEqualsWithNullOrDifferentType_thenReturnsFalse() {
         // Arrange
-        RoomId roomId1 = new RoomId("Room1");
-        RoomId roomId2 = new RoomId("Room2");
-        Room room1 = new Room(roomId1, "Room A", 10);
-        Room room2 = new Room(roomId1, "Room A", 10);
-        Room room3 = new Room(roomId2, "Room B", 15);
+        Room a = new Room(new RoomId("LC1"), "Salle Alpha", 10);
 
-        // Act & Assert
-        assertEquals(room1, room2);
-        assertNotEquals(room1, room3);
-        assertEquals(room1.hashCode(), room2.hashCode());
-        assertNotEquals(room1.hashCode(), room3.hashCode());
+        // Act
+        boolean eqNull = a.equals(null);
+        boolean eqOtherType = a.equals("not-a-room");
+
+        // Assert
+        assertFalse(eqNull);
+        assertFalse(eqOtherType);
     }
-
-    @Test
-    void should_throw_exception_when_name_is_empty_string() {
-        // Arrange
-        RoomId roomId = new RoomId("Room1");
-        String name = ""; // Empty string
-        int capacity = 20;
-
-        // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> new Room(roomId, name, capacity));
-        assertEquals("Le nom ne peut pas être null ou vide.", exception.getMessage());
-    }
-
-    @Test
-    void should_throw_exception_when_name_is_spaces_only() {
-        // Arrange
-        RoomId roomId = new RoomId("Room1");
-        String name = "   "; // Spaces only
-        int capacity = 20;
-
-        // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> new Room(roomId, name, capacity));
-        assertEquals("Le nom ne peut pas être null ou vide.", exception.getMessage());
-    }
-
-    @Test
-    void testEquals_NullAndOtherTypes() {
-        // Arrange
-        RoomId roomId = new RoomId("Room1");
-        Room room = new Room(roomId, "Salle A", 20);
-
-        // Act & Assert
-        assertNotEquals(room, null); // Comparaison avec null
-        assertNotEquals(room, "Not a Room"); // Comparaison avec un autre type
-    }
-
 }

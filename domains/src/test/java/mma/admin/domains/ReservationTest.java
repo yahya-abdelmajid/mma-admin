@@ -1,5 +1,6 @@
 package mma.admin.domains;
 
+import mma.admin.domains.exceptions.NoPositiveCapacityException;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -108,11 +109,12 @@ public class ReservationTest {
     public void should_throw_exception_for_null_roomId_or_timeSlot_in_constructor() {
         IllegalArgumentException exception1 = assertThrows(IllegalArgumentException.class,
                 () -> new Reservation(1, null, "12345", null, "Réunion",10));
-        assertEquals("L'identifiant de la salle et le créneau horaire ne peuvent pas être nuls.", exception1.getMessage());
+        assertEquals("roomId ne peut pas être nul ou vide.", exception1.getMessage());
 
-        IllegalArgumentException exception2 = assertThrows(IllegalArgumentException.class,
+        NullPointerException exception2 = assertThrows(NullPointerException.class,
                 () -> new Reservation(1, "Salle1", "12345", null, "Réunion",10));
-        assertEquals("L'identifiant de la salle et le créneau horaire ne peuvent pas être nuls.", exception2.getMessage());
+        assertEquals("timeSlot ne peut pas être nul.", exception2.getMessage());
+
     }
 
     @Test
@@ -166,7 +168,7 @@ public class ReservationTest {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             new Reservation(1, null, "P123", timeSlot, "Description",10);
         });
-        assertEquals("L'identifiant de la salle et le créneau horaire ne peuvent pas être nuls.", exception.getMessage());
+        assertEquals("roomId ne peut pas être nul ou vide.", exception.getMessage());
     }
 
     @Test
@@ -176,7 +178,7 @@ public class ReservationTest {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             new Reservation(1, "Room A", "", timeSlot, "Description",10);
         });
-        assertEquals("L'identifiant de la personne ne peut pas être nul ou vide.", exception.getMessage());
+        assertEquals("personId ne peut pas être nul ou vide.", exception.getMessage());
     }
 
     @Test
@@ -225,22 +227,6 @@ public class ReservationTest {
         });
         assertEquals("Cette prestation est déjà ajoutée.", exception.getMessage());
     }
-
-//    @Test
-//    void testGetPrestations_Immutability() {
-//        TimeSlot timeSlot = new TimeSlot(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(10, 0));
-//        Reservation reservation = new Reservation(1, "Room A", "P123", timeSlot, "Description");
-//
-//        Prestation prestation = new Prestation(1,"Service 1");
-//        reservation.addPrestation(prestation);
-//
-//        List<Prestation> prestations = reservation.getPrestations();
-//
-//        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-//            prestations.add(new Prestation(2,"Service 2")); // Trying to modify the list
-//        });
-//        assertEquals("class java.lang.IllegalArgumentException", exception.getClass().getName());
-//    }
 
     @Test
     void testEquals_True() {
@@ -294,5 +280,30 @@ public class ReservationTest {
         Reservation reservation2 = new Reservation(2, "LC1", "P124", timeSlot1, "Description",10);
 
         assertTrue(reservation1.compareTo(reservation2) == 0); // reservation1 has lower id
+    }
+
+    @Test
+    void testRequirePositive_ok() {
+        TimeSlot slot = new TimeSlot(LocalDateTime.now(), LocalDateTime.now().plusHours(1));
+
+        Reservation r = new Reservation(1, "LC1", "U123", slot, "Test", 5);
+
+        assertEquals(5, r.getExpectedPerson());
+    }
+
+    @Test
+    void testRequirePositive_throwsExceptionWhenZero() {
+        TimeSlot slot = new TimeSlot(LocalDateTime.now(), LocalDateTime.now().plusHours(1));
+
+        assertThrows(NoPositiveCapacityException.class,
+                () -> new Reservation(1, "LC1", "U123", slot, "Test", 0));
+    }
+
+    @Test
+    void testRequirePositive_throwsExceptionWhenNegative() {
+        TimeSlot slot = new TimeSlot(LocalDateTime.now(), LocalDateTime.now().plusHours(1));
+
+        assertThrows(NoPositiveCapacityException.class,
+                () -> new Reservation(1, "LC1", "U123", slot, "Test", -3));
     }
 }

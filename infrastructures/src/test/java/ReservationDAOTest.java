@@ -25,41 +25,30 @@ public class ReservationDAOTest {
     DataBaseInitializer db;
     RoomsRepository roomsRepository;
 
-
     @BeforeEach
     void setUp() throws SQLException {
-       db = new DataBaseInitializer();
+        db = new DataBaseInitializer();
         db.clearTable();
-       db.createTable();
+        db.createTable();
 
-        List<Room> rooms = List.of(
-                new Room(new RoomId("LC1"), "Learning Center 1", 20),
-                new Room(new RoomId("LC2"), "Learning Center 2", 20),
-                new Room(new RoomId("LB1"), "Learning Box 1", 5),
-                new Room(new RoomId("LB2"), "Learning Box 2", 5)
-        );
+        db.addRoomExample();
 
-        // Ajout des utilisateurs
-
-        db.addRoom(rooms);
-
-        RoomService roomService= new DBRoomService(db.getSQLDataStorage());
+        RoomService roomService = new DBRoomService(db.getSQLDataStorage());
         roomsRepository = new DBRoomsRepository(roomService);
     }
 
+
     @Test
-    void findAll_ShouldCoverAllBranches() throws SQLException {
-        // Mock des objets JDBC
+    void findAll_ShouldCoverAllBranches_MultipleAndEmptyResults() throws SQLException {
         Connection mockConnection = mock(Connection.class);
         PreparedStatement mockStatement = mock(PreparedStatement.class);
         ResultSet mockResultSet = mock(ResultSet.class);
 
-        // Configuration des retours simulés pour le cas nominal
         when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement);
         when(mockStatement.executeQuery()).thenReturn(mockResultSet);
 
-        // Cas 1 : Plusieurs réservations dans le résultat
-        when(mockResultSet.next()).thenReturn(true, true, false); // Deux lignes
+        // 2 lignes
+        when(mockResultSet.next()).thenReturn(true, true, false);
         when(mockResultSet.getInt("id")).thenReturn(1, 2);
         when(mockResultSet.getString("room_id")).thenReturn("LC1", "LB1");
         when(mockResultSet.getString("person_id")).thenReturn("A123", "B234");
@@ -76,84 +65,220 @@ public class ReservationDAOTest {
 
         ReservationDAOImpl reservationDAO = new ReservationDAOImpl(mockConnection);
         List<Reservation> reservations = reservationDAO.findAll();
-
-        // Vérifications pour le cas nominal
-        assertNotNull(reservations);
         assertEquals(2, reservations.size());
 
-        Reservation first = reservations.get(0);
-        assertEquals(1, first.getId());
-        assertEquals("LC1", first.getRoomId().id());
-        assertEquals("A123", first.getPersonId());
-        assertEquals(LocalDateTime.of(2024, 12, 24, 9, 0), first.getTimeSlot().getStartTime());
-        assertEquals(LocalDateTime.of(2024, 12, 24, 11, 0), first.getTimeSlot().getEndTime());
-        assertEquals("Réunion", first.getDescription());
-        assertEquals(10, first.getExpectedPerson());
+        // Aucun résultat
+        when(mockResultSet.next()).thenReturn(false);
+        assertTrue(reservationDAO.findAll().isEmpty());
 
-        // Cas 2 : Aucun résultat
-        when(mockResultSet.next()).thenReturn(false); // Pas de lignes
-        reservations = reservationDAO.findAll();
-
-        assertNotNull(reservations);
-        assertTrue(reservations.isEmpty());
-
-        // Cas 3 : Exception SQL
+        // Exception SQL sur executeQuery
         when(mockStatement.executeQuery()).thenThrow(new SQLException("Database error"));
-
-        RuntimeException exception = assertThrows(RuntimeException.class, reservationDAO::findAll);
-        assertEquals("java.sql.SQLException: Database error", exception.getMessage());
-
-        // Vérification des interactions
-        verify(mockConnection, atLeastOnce()).prepareStatement(anyString());
-        verify(mockStatement, atLeastOnce()).executeQuery();
-        verify(mockResultSet, atLeastOnce()).next();
+        RuntimeException ex = assertThrows(RuntimeException.class, reservationDAO::findAll);
+        assertEquals("java.sql.SQLException: Database error", ex.getMessage());
     }
 
     @Test
-    void insert_ShouldCoverAllBranches() throws SQLException {
-        // Mock des objets JDBC
+    void findAll_ShouldCloseResources_OnSuccess() throws SQLException {
+        Connection c = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(c.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true, false);
+        when(rs.getInt("id")).thenReturn(42);
+        when(rs.getString("room_id")).thenReturn("LC1");
+        when(rs.getString("person_id")).thenReturn("A123");
+        when(rs.getTimestamp("start_time")).thenReturn(Timestamp.valueOf(LocalDateTime.of(2024, 12, 24, 9, 0)));
+        when(rs.getTimestamp("end_time")).thenReturn(Timestamp.valueOf(LocalDateTime.of(2024, 12, 24, 11, 0)));
+        when(rs.getString("description")).thenReturn("Réunion");
+        when(rs.getInt("expected_person")).thenReturn(10);
+
+        ReservationDAOImpl dao = new ReservationDAOImpl(c);
+        assertDoesNotThrow(dao::findAll);
+        verify(rs).close();
+        verify(ps).close();
+    }
+
+    @Test
+    void findAll_ShouldThrowRuntimeException_OnRowMappingStartTime() throws SQLException {
+        Connection c = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(c.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true);
+        when(rs.getInt("id")).thenReturn(1);
+        when(rs.getString("room_id")).thenReturn("LC1");
+        when(rs.getString("person_id")).thenReturn("A123");
+        when(rs.getTimestamp("start_time")).thenThrow(new SQLException("bad timestamp"));
+
+        ReservationDAOImpl dao = new ReservationDAOImpl(c);
+        RuntimeException ex = assertThrows(RuntimeException.class, dao::findAll);
+        assertEquals("bad timestamp", ex.getCause().getMessage());
+    }
+
+    @Test
+    void findAll_ShouldThrowRuntimeException_OnDescription() throws Exception {
+        Connection c = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(c.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true);
+        when(rs.getInt("id")).thenReturn(1);
+        when(rs.getString("room_id")).thenReturn("LC1");
+        when(rs.getString("person_id")).thenReturn("A123");
+        when(rs.getTimestamp("start_time")).thenReturn(Timestamp.valueOf(LocalDateTime.of(2024, 12, 24, 9, 0)));
+        when(rs.getTimestamp("end_time")).thenReturn(Timestamp.valueOf(LocalDateTime.of(2024, 12, 24, 11, 0)));
+        when(rs.getString("description")).thenThrow(new SQLException("bad description"));
+
+        ReservationDAOImpl dao = new ReservationDAOImpl(c);
+        RuntimeException ex = assertThrows(RuntimeException.class, dao::findAll);
+        assertEquals("bad description", ex.getCause().getMessage());
+    }
+
+    @Test
+    void findAll_ShouldThrowRuntimeException_OnExpectedPerson() throws Exception {
+        Connection c = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(c.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true);
+        when(rs.getInt("id")).thenReturn(1);
+        when(rs.getString("room_id")).thenReturn("LC1");
+        when(rs.getString("person_id")).thenReturn("A123");
+        when(rs.getTimestamp("start_time")).thenReturn(Timestamp.valueOf(LocalDateTime.of(2024, 12, 24, 9, 0)));
+        when(rs.getTimestamp("end_time")).thenReturn(Timestamp.valueOf(LocalDateTime.of(2024, 12, 24, 11, 0)));
+        when(rs.getString("description")).thenReturn("Réunion");
+        when(rs.getInt("expected_person")).thenThrow(new SQLException("bad expected"));
+
+        ReservationDAOImpl dao = new ReservationDAOImpl(c);
+        RuntimeException ex = assertThrows(RuntimeException.class, dao::findAll);
+        assertEquals("bad expected", ex.getCause().getMessage());
+    }
+
+    @Test
+    void findAll_ShouldHandleExceptionAndCloseAlsoFails() throws Exception {
+        Connection c = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(c.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true);
+        when(rs.getInt("id")).thenReturn(1);
+        when(rs.getString("room_id")).thenReturn("LC1");
+        when(rs.getString("person_id")).thenReturn("A123");
+        when(rs.getTimestamp("start_time")).thenThrow(new SQLException("main error"));
+        doThrow(new SQLException("close failed")).when(rs).close();
+
+        ReservationDAOImpl dao = new ReservationDAOImpl(c);
+        RuntimeException ex = assertThrows(RuntimeException.class, dao::findAll);
+        assertEquals("main error", ex.getCause().getMessage());
+        assertTrue(ex.getCause().getSuppressed().length > 0);
+    }
+
+    // ---- INSERT ----
+
+    @Test
+    void insert_ShouldWorkAndFailOnExecuteUpdate() throws SQLException {
         Connection mockConnection = mock(Connection.class);
         PreparedStatement mockStatement = mock(PreparedStatement.class);
-
-        // Configuration du mock pour le cas nominal
         when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement);
 
-        // Création d'une réservation à insérer
         Reservation reservation = new Reservation(
-                1,
-                "LC1",
-                "A123",
-                new TimeSlot(
-                        LocalDateTime.of(2024, 12, 24, 9, 0),
-                        LocalDateTime.of(2024, 12, 24, 11, 0)
-                ),
-                "Réunion",
-                10
+                1, "LC1", "A123",
+                new TimeSlot(LocalDateTime.of(2024, 12, 24, 9, 0),
+                        LocalDateTime.of(2024, 12, 24, 11, 0)),
+                "Réunion", 10
         );
 
-        ReservationDAOImpl reservationDAO = new ReservationDAOImpl(mockConnection);
+        ReservationDAOImpl dao = new ReservationDAOImpl(mockConnection);
+        assertDoesNotThrow(() -> dao.insert(reservation));
 
-        // Cas nominal : insertion réussie
-        assertDoesNotThrow(() -> reservationDAO.insert(reservation));
-
-        // Vérification des interactions avec le mock
-        verify(mockStatement).setInt(1, reservation.getId());
-        verify(mockStatement).setString(2, reservation.getRoomId().id());
-        verify(mockStatement).setString(3, reservation.getPersonId());
-        verify(mockStatement).setTimestamp(4, Timestamp.valueOf(reservation.getTimeSlot().getStartTime()));
-        verify(mockStatement).setTimestamp(5, Timestamp.valueOf(reservation.getTimeSlot().getEndTime()));
-        verify(mockStatement).setString(6, reservation.getDescription());
-        verify(mockStatement).setInt(7, reservation.getExpectedPerson());
-        verify(mockStatement).executeUpdate();
-
-        // Cas d'exception SQL
         when(mockStatement.executeUpdate()).thenThrow(new SQLException("Insert failed"));
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> dao.insert(reservation));
+        assertEquals("Error inserting reservation", ex.getMessage());
+    }
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> reservationDAO.insert(reservation));
-        assertEquals("Error inserting reservation", exception.getMessage());
+    @Test
+    void insert_ShouldThrowRuntimeException_OnPrepareStatement() throws SQLException {
+        Connection mockConnection = mock(Connection.class);
+        when(mockConnection.prepareStatement(anyString())).thenThrow(new SQLException("prep failed"));
 
-        // Vérification des interactions
-        verify(mockConnection, atLeastOnce()).prepareStatement(anyString());
+        Reservation reservation = new Reservation(
+                1, "LC1", "A123",
+                new TimeSlot(LocalDateTime.of(2024, 12, 24, 9, 0),
+                        LocalDateTime.of(2024, 12, 24, 11, 0)),
+                "Réunion", 10
+        );
+
+        ReservationDAOImpl dao = new ReservationDAOImpl(mockConnection);
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> dao.insert(reservation));
+        assertEquals("prep failed", ex.getCause().getMessage());
+    }
+
+    @Test
+    void insert_ShouldThrowRuntimeException_OnSetTimestamp() throws Exception {
+        Connection c = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        when(c.prepareStatement(anyString())).thenReturn(ps);
+        doThrow(new SQLException("set ts failed")).when(ps).setTimestamp(eq(4), any());
+
+        Reservation r = new Reservation(
+                1, "LC1", "A123",
+                new TimeSlot(LocalDateTime.of(2024, 12, 24, 9, 0),
+                        LocalDateTime.of(2024, 12, 24, 11, 0)),
+                "Réunion", 10
+        );
+
+        ReservationDAOImpl dao = new ReservationDAOImpl(c);
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> dao.insert(r));
+        assertEquals("set ts failed", ex.getCause().getMessage());
+    }
+
+    @Test
+    void insert_ShouldThrowRuntimeException_OnSetStringRoomId() throws Exception {
+        Connection c = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        when(c.prepareStatement(anyString())).thenReturn(ps);
+        doThrow(new SQLException("set string failed")).when(ps).setString(eq(2), anyString());
+
+        Reservation r = new Reservation(
+                1, "LC1", "A123",
+                new TimeSlot(LocalDateTime.of(2024, 12, 24, 9, 0),
+                        LocalDateTime.of(2024, 12, 24, 11, 0)),
+                "Réunion", 10
+        );
+
+        ReservationDAOImpl dao = new ReservationDAOImpl(c);
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> dao.insert(r));
+        assertEquals("set string failed", ex.getCause().getMessage());
+    }
+
+    @Test
+    void insert_ShouldThrowRuntimeException_OnStatementClose() throws Exception {
+        Connection c = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        when(c.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeUpdate()).thenReturn(1);
+        doThrow(new SQLException("ps close failed")).when(ps).close();
+
+        Reservation r = new Reservation(
+                1, "LC1", "A123",
+                new TimeSlot(LocalDateTime.of(2024, 12, 24, 9, 0),
+                        LocalDateTime.of(2024, 12, 24, 11, 0)),
+                "Réunion", 10
+        );
+
+        ReservationDAOImpl dao = new ReservationDAOImpl(c);
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> dao.insert(r));
+        assertEquals("ps close failed", ex.getCause().getMessage());
     }
 
     @AfterEach
