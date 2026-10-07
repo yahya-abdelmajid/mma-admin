@@ -13,8 +13,4 @@
 Commande d'éxécution de l'application ex: ./gradlew run --args="--db=jdbc:mysql://192.168.132.200:13306 --user=Q240275 --pwd=0275"
 Ce sont également les données de connexion à la base de donnée
 
-La commande ne fonctionne plus
-
-Lors du lancement de l'application "des erreurs" s'affichent mais le menu fonctionne quand même, il vous juste d'encoder un numéro.
-
 Une grande partie des tests ont étaient générés par une IA et modifié par mes soins. Certaines méthodes liées au recherche de disponibilités également.
